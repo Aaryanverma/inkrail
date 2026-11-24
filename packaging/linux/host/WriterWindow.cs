@@ -25,6 +25,13 @@ internal sealed class WriterWindow
     private uint closeTimer, smokeTimer;
     private bool ready, closePending, canClose, destroyed;
     private bool pdfExportActive, closeAfterPdfExport;
+    // Window chrome: the desk draws its own title area and controls.
+    private uint windowState;
+    private bool buttonHeld;
+    private uint pressButton, pressTime;
+    private double pressX, pressY;
+    private bool Maximized => (windowState & StateMaximized) != 0;
+    private bool Fullscreen => (windowState & StateFullscreen) != 0;
     public int ExitCode { get; private set; }
 
     public WriterWindow(Library library, string ui, bool devTools, bool smoke)
@@ -65,6 +72,11 @@ internal sealed class WriterWindow
         Connect(browser, "permission-request", (nint)(delegate* unmanaged<nint, nint, nint, int>)&DenyPermission);
         Connect(browser, "context-menu", (nint)(delegate* unmanaged<nint, nint, nint, nint, nint, int>)&ContextMenu);
         Connect(browser, "web-process-terminated", (nint)(delegate* unmanaged<nint, int, nint, void>)&ProcessTerminated);
+        Connect(browser, "button-press-event", (nint)(delegate* unmanaged<nint, nint, nint, int>)&ButtonPressed);
+        Connect(browser, "button-release-event", (nint)(delegate* unmanaged<nint, nint, nint, int>)&ButtonReleased);
+        // Match the desk so no white flashes before the first paint.
+        var desk = new GdkRGBA { Red = 0x1b / 255.0, Green = 0x1d / 255.0, Blue = 0x1b / 255.0, Alpha = 1 };
+        webkit_web_view_set_background_color(browser, &desk);
 
         window = gtk_window_new(0);
         gtk_window_set_title(window, "Inkrail");
@@ -73,7 +85,15 @@ internal sealed class WriterWindow
         gtk_window_set_position(window, 1); // GTK_WIN_POS_CENTER
         string icon = Path.Combine(ui, "assets", "AppIcon.png");
         if (File.Exists(icon)) gtk_window_set_icon_from_file(window, icon, 0);
+        // A hidden titlebar keeps client-side decorations (resize edges, shadow,
+        // tiling) without drawing a title bar; the desk provides its own. Even an
+        // empty visible one gets the theme's titlebar height.
+        nint titlebar = gtk_box_new(0, 0);
+        gtk_widget_set_no_show_all(titlebar, true);
+        gtk_window_set_titlebar(window, titlebar);
         gtk_container_add(window, browser);
+        Connect(window, "key-press-event", (nint)(delegate* unmanaged<nint, nint, nint, int>)&KeyPressed);
+        Connect(window, "window-state-event", (nint)(delegate* unmanaged<nint, nint, nint, int>)&WindowStateChanged);
         Connect(window, "delete-event", (nint)(delegate* unmanaged<nint, nint, nint, int>)&DeleteEvent);
         Connect(window, "destroy", (nint)(delegate* unmanaged<nint, nint, void>)&Destroyed);
         gtk_widget_show_all(window);
@@ -242,6 +262,14 @@ internal sealed class WriterWindow
                     if (!gtk_show_uri_on_window(window, FileUri(library.Location), 0, 0))
                         throw new IOException("No file manager could open " + library.Location);
                     break;
+                case "windowState": value = ChromeState(); break;
+                case "windowDrag": BeginDrag(); break;
+                case "windowMinimize": gtk_window_iconify(window); break;
+                case "windowMaximize":
+                    if (Maximized) gtk_window_unmaximize(window); else gtk_window_maximize(window);
+                    break;
+                case "windowFullscreen": ToggleFullscreen(); break;
+                case "windowClose": SynchronizationContext.Current!.Post(_ => Close(), null); break;
                 case "windowDirty": break; // Always flush on close, even with pending preference changes alone.
                 case "windowReady":
                     ready = true;
@@ -295,6 +323,69 @@ internal sealed class WriterWindow
         if (value != 0) webkit_javascript_result_unref(value);
         if (error != 0) g_error_free(error);
         done.TrySetResult(error == 0);
+    }
+
+    // ----- Window chrome ----------------------------------------------------
+
+    private object ChromeState() => new { maximized = Maximized, fullscreen = Fullscreen };
+
+    [UnmanagedCallersOnly]
+    private static int ButtonPressed(nint widget, nint e, nint data)
+    {
+        var self = current!;
+        if (EventType(e) is ButtonPress or DoubleButtonPress)
+        {
+            self.buttonHeld = true;
+            self.pressButton = ButtonNumber(e);
+            self.pressTime = EventTime(e);
+            self.pressX = ButtonRootX(e);
+            self.pressY = ButtonRootY(e);
+        }
+        return 0; // The desk still receives the press.
+    }
+
+    [UnmanagedCallersOnly]
+    private static int ButtonReleased(nint widget, nint e, nint data)
+    {
+        current!.buttonHeld = false;
+        return 0;
+    }
+
+    // The desk asks to move the window when its background is pressed. Hand the
+    // still-held press to the window manager, as a title bar would.
+    private void BeginDrag()
+    {
+        if (!buttonHeld || pressButton != 1 || Fullscreen) return;
+        buttonHeld = false; // The compositor takes the pointer; no release reaches us.
+        gtk_window_begin_move_drag(window, (int)pressButton, (int)pressX, (int)pressY, pressTime);
+    }
+
+    private void ToggleFullscreen()
+    {
+        if (Fullscreen) gtk_window_unfullscreen(window); else gtk_window_fullscreen(window);
+    }
+
+    [UnmanagedCallersOnly]
+    private static int KeyPressed(nint widget, nint e, nint data)
+    {
+        if (KeyVal(e) != KeyF11) return 0;
+        current!.ToggleFullscreen();
+        return 1;
+    }
+
+    [UnmanagedCallersOnly]
+    private static int WindowStateChanged(nint widget, nint e, nint data)
+    {
+        var self = current!;
+        uint state = NewWindowState(e);
+        bool changed = ((state ^ self.windowState) & (StateMaximized | StateFullscreen)) != 0;
+        self.windowState = state;
+        if (changed && self.ready && !self.destroyed)
+        {
+            string detail = JsonSerializer.Serialize(self.ChromeState(), Json);
+            _ = self.RunScript($"window.dispatchEvent(new CustomEvent('inkrail-window-state',{{detail:{detail}}}))");
+        }
+        return 0;
     }
 
     // ----- Closing ----------------------------------------------------------

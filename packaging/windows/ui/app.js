@@ -5,6 +5,7 @@ import {importMarkdown,exportMarkdown,exportPlainText} from './markdown.js';
 import {hasLetterText,normalizeSeal} from './seal.js';
 import {mountPanels,normalizeSettings,pageTitle} from './panels.js';
 import {Keys} from './audio.js';
+import {mountWindowChrome,nativeChrome,toggleFullscreen} from './window-chrome.js';
 
 const $=id=>document.getElementById(id);
 const buttons={};
@@ -22,6 +23,7 @@ function message(msg){if(!msg)return;const d=$('notice');$('notice-text').textCo
 $('notice-ok').onclick=()=>$('notice').close();
 $('notice').addEventListener('close',()=>{if(!panel.isOpen())editor.focus()});
 const desk=mountDesk($('desk'),{toggleNight:()=>{setPrefs({nightMode:!state.settings.nightMode});editor.focus()}});
+mountWindowChrome();
 const editor=mountEditor(desk.surface,{onChange(p){
  if(!ready||!p?.id||p.id!==state.id)return;
  const previous=page();const next={...previous,text:p.text,formatting:p.formatting??[],modifiedAt:new Date().toISOString()};
@@ -166,6 +168,7 @@ async function action(name,id,value){
  case 'bold':case 'italic':case 'underline':case 'clearFormatting':editor.command(name);return true;
  case 'focus':state.focus=!state.focus;applyAppearance();return true;
  case 'night':setPrefs({nightMode:!state.settings.nightMode});return true;
+ case 'fullscreen':await toggleFullscreen();return true;
  case 'sound':setPrefs({soundEnabled:!state.settings.soundEnabled});return true;
  case 'about':message('Inkrail for '+(location.protocol==='inkrail:'?'Linux':'Windows')+'\nPaper, ink, and a little room to write.\n\nMade with ❤ by Aaryan Verma.\nOpen source · MIT license.');return true;
  }
@@ -204,10 +207,10 @@ function invoke(name){
  // Modal file actions are serialized, while editing controls stay responsive.
  if(name==='save'){void flush();return;}
  const run=async()=>{if(closing)return;try{await action(name)}catch(e){noticeError(e)}finally{if(!panel.isOpen()&&!$('notice').open)editor.focus();}};
- if(['bold','italic','underline','clearFormatting','focus','night','sound'].includes(name)){void run();return;}
+ if(['bold','italic','underline','clearFormatting','focus','night','sound','fullscreen'].includes(name)){void run();return;}
  pendingAction=pendingAction.then(run,run);
 }
-const menu=$('commands'),commands=[['new','New letter','Ctrl+N'],['import','Import text or Markdown…','Ctrl+O'],['save','Save now','Ctrl+S'],['seal','Seal letter…',''],['exportPDF','Export Letter as PDF…',''],['exportMarkdown','Export Markdown…',''],['export','Export text…','Ctrl+Shift+E'],null,['library','Letter box','Ctrl+Shift+O'],['settings','Make it yours…','Ctrl+,'],['clearFormatting','Clear inline formatting','Ctrl+\\'],['revealStorage','Show local files',''],null,['about','About Inkrail','']];
+const menu=$('commands'),commands=[['new','New letter','Ctrl+N'],['import','Import text or Markdown…','Ctrl+O'],['save','Save now','Ctrl+S'],['seal','Seal letter…',''],['exportPDF','Export Letter as PDF…',''],['exportMarkdown','Export Markdown…',''],['export','Export text…','Ctrl+Shift+E'],null,['library','Letter box','Ctrl+Shift+O'],['settings','Make it yours…','Ctrl+,'],['clearFormatting','Clear inline formatting','Ctrl+\\'],['revealStorage','Show local files',''],...(nativeChrome?[['fullscreen','Full screen','F11']]:[]),null,['about','About Inkrail','']];
 for(const entry of commands){if(!entry){menu.append(el('hr'));continue}const [id,label,key]=entry,b=el('button');b.type='button';b.role='menuitem';b.dataset.command=id;b.append(el('span','',label),el('small','',key));b.onclick=()=>{hideMenu();invoke(id)};menu.append(b);}
 let menuAnchor=null;
 function hideMenu(){menu.hidden=true;menuAnchor?.setAttribute('aria-expanded','false');menuAnchor=null;}

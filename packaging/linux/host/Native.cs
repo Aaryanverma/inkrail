@@ -60,6 +60,16 @@ internal static unsafe partial class Native
     [LibraryImport(Gtk, StringMarshalling = StringMarshalling.Utf8)]
     [return: MarshalAs(UnmanagedType.Bool)] public static partial bool gtk_show_uri_on_window(nint parent, string uri, uint timestamp, nint error);
 
+    [LibraryImport(Gtk)] public static partial void gtk_window_set_titlebar(nint window, nint titlebar);
+    [LibraryImport(Gtk)] public static partial nint gtk_box_new(int orientation, int spacing);
+    [LibraryImport(Gtk)] public static partial void gtk_widget_set_no_show_all(nint widget, [MarshalAs(UnmanagedType.Bool)] bool noShowAll);
+    [LibraryImport(Gtk)] public static partial void gtk_window_begin_move_drag(nint window, int button, int rootX, int rootY, uint timestamp);
+    [LibraryImport(Gtk)] public static partial void gtk_window_maximize(nint window);
+    [LibraryImport(Gtk)] public static partial void gtk_window_unmaximize(nint window);
+    [LibraryImport(Gtk)] public static partial void gtk_window_iconify(nint window);
+    [LibraryImport(Gtk)] public static partial void gtk_window_fullscreen(nint window);
+    [LibraryImport(Gtk)] public static partial void gtk_window_unfullscreen(nint window);
+
     // Message dialogs (message_format is NULL; the text is set as escaped markup).
     [LibraryImport(Gtk)] public static partial nint gtk_message_dialog_new(nint parent, int flags, int type, int buttons, nint format);
     [LibraryImport(Gtk)] public static partial void gtk_message_dialog_set_markup(nint dialog, nint markup);
@@ -108,6 +118,7 @@ internal static unsafe partial class Native
     [return: MarshalAs(UnmanagedType.Bool)] public static partial bool webkit_user_content_manager_register_script_message_handler(nint manager, string name);
     [LibraryImport(WebKit)] public static partial nint webkit_web_view_new_with_user_content_manager(nint manager);
     [LibraryImport(WebKit)] public static partial nint webkit_web_view_get_settings(nint view);
+    [LibraryImport(WebKit)] public static partial void webkit_web_view_set_background_color(nint view, GdkRGBA* color);
     [LibraryImport(WebKit, StringMarshalling = StringMarshalling.Utf8)] public static partial void webkit_web_view_load_uri(nint view, string uri);
     [LibraryImport(WebKit)] public static partial nint webkit_web_view_get_uri(nint view);
     [LibraryImport(WebKit, StringMarshalling = StringMarshalling.Utf8)]
@@ -147,6 +158,22 @@ internal static unsafe partial class Native
     public const int ButtonsOk = 1, ButtonsYesNo = 4;
     public const int DialogModal = 1, DialogDestroyWithParent = 2;
     public const int UnitInch = 2;
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct GdkRGBA { public double Red, Green, Blue, Alpha; }
+
+    // GdkEventButton (x86_64/aarch64 LP64 layout)
+    public const int ButtonPress = 4, DoubleButtonPress = 5;
+    public static int EventType(nint e) => Marshal.ReadInt32(e, 0);
+    public static uint EventTime(nint e) => (uint)Marshal.ReadInt32(e, 20);
+    public static uint ButtonNumber(nint e) => (uint)Marshal.ReadInt32(e, 52);
+    public static double ButtonRootX(nint e) => BitConverter.Int64BitsToDouble(Marshal.ReadInt64(e, 64));
+    public static double ButtonRootY(nint e) => BitConverter.Int64BitsToDouble(Marshal.ReadInt64(e, 72));
+    // GdkEventKey.keyval and GdkEventWindowState.new_window_state
+    public static uint KeyVal(nint e) => (uint)Marshal.ReadInt32(e, 28);
+    public static uint NewWindowState(nint e) => (uint)Marshal.ReadInt32(e, 24);
+    public const uint KeyF11 = 0xffc8;
+    public const uint StateMaximized = 1 << 2, StateFullscreen = 1 << 4;
 
     public static string? Utf8(nint text) => text == 0 ? null : Marshal.PtrToStringUTF8(text);
 
