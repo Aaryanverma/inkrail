@@ -1,0 +1,56 @@
+# Builds the portable Linux archive. Context: the repository root.
+#   podman build -f packaging/linux/Containerfile --build-arg ARCH=x64 -t inkrail-linux .
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+ARG ARCH=x64
+WORKDIR /src
+# Restore first so the package cache survives source edits.
+COPY packaging/linux/host/Inkrail.csproj packaging/linux/host/
+RUN dotnet restore packaging/linux/host/Inkrail.csproj -r linux-${ARCH}
+COPY packaging/windows/host/Library.cs packaging/windows/host/
+COPY packaging/linux/host/ packaging/linux/host/
+RUN dotnet publish packaging/linux/host/Inkrail.csproj -c Release -r linux-${ARCH} --no-restore -o /out/host
+# The bundled .NET runtime's license and third-party notices.
+RUN pack=$(ls -d /root/.nuget/packages/microsoft.netcore.app.runtime.linux-${ARCH}/*/ | head -1) \
+ && install -Dm644 "$pack/LICENSE.TXT" /out/notices/DotNet/LICENSE.TXT \
+ && install -Dm644 "$pack/THIRD-PARTY-NOTICES.TXT" /out/notices/DotNet/THIRD-PARTY-NOTICES.TXT
+COPY LICENSE ./
+COPY Sources/Inkrail/Resources/ Sources/Inkrail/Resources/
+COPY packaging/windows/ui/ packaging/windows/ui/
+COPY packaging/windows/notices/ packaging/windows/notices/
+COPY packaging/linux/ packaging/linux/
+RUN packaging/linux/assemble.sh ${ARCH} /out/host /dist/Inkrail-Linux-${ARCH}.tar.gz /out/notices
+
+# Headless check: the desk boots in WebKitGTK, reaches the host and closes cleanly.
+FROM debian:trixie-slim AS smoke
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      libwebkit2gtk-4.1-0 xvfb xauth dbus-x11 ca-certificates && rm -rf /var/lib/apt/lists/*
+COPY --from=build /dist/ /dist/
+RUN mkdir /app && tar -xzf /dist/*.tar.gz -C /app --strip-components=1 \
+ && cd /app && sha256sum --quiet -c files.sha256
+ENV WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1 \
+    WEBKIT_DISABLE_COMPOSITING_MODE=1 \
+    LIBGL_ALWAYS_SOFTWARE=1
+CMD ["sh", "-c", "dbus-run-session -- xvfb-run -a /app/inkrail -data /tmp/inkrail-smoke -smoke && test -d /tmp/inkrail-smoke/Library/Letters && test -s /tmp/inkrail-smoke/smoke.pdf"]
+
+# RPM for Fedora, RHEL and openSUSE-style systems (repackages the archive above).
+FROM fedora:44 AS rpm
+ARG ARCH=x64
+ARG VERSION=0.1.2
+RUN dnf install -y --setopt=install_weak_deps=False rpm-build && dnf clean all
+COPY packaging/linux/inkrail.spec /root/rpmbuild/SPECS/
+COPY --from=build /dist/ /root/rpmbuild/SOURCES/
+RUN target=$([ "$ARCH" = arm64 ] && echo aarch64 || echo x86_64) \
+ && rpmbuild -bb --target "$target" --define "version $VERSION" --define "archive_arch $ARCH" \
+      /root/rpmbuild/SPECS/inkrail.spec \
+ && mkdir -p /dist && cp /root/rpmbuild/RPMS/*/*.rpm /dist/
+
+# Installs the RPM on a clean Fedora (resolving its dependencies) and runs the smoke check.
+FROM fedora:44 AS rpm-smoke
+COPY --from=rpm /dist/ /rpm/
+RUN dnf install -y /rpm/*.rpm xorg-x11-server-Xvfb xorg-x11-xauth dbus-daemon which && dnf clean all
+ENV WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1 WEBKIT_DISABLE_COMPOSITING_MODE=1 LIBGL_ALWAYS_SOFTWARE=1
+CMD ["sh", "-c", "dbus-run-session -- xvfb-run -a inkrail -data /tmp/inkrail-smoke -smoke && test -s /tmp/inkrail-smoke/smoke.pdf"]
+
+FROM scratch AS dist
+COPY --from=build /dist/ /
+COPY --from=rpm /dist/ /

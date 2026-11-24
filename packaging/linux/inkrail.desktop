@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Inkrail
+GenericName=Typewriter
+Comment=Paper, ink, and a little room to write
+Exec=inkrail
+Icon=inkrail
+Terminal=false
+Categories=Office;WordProcessor;
+Keywords=typewriter;letter;writing;markdown;
+StartupWMClass=inkrail
+StartupNotify=true
