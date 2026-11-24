@@ -686,7 +686,13 @@ export function mountDesk(root, callbacks = {}) {
     if (['classic','cotton'].includes(settings.paperTexture ?? 'classic') && settings.textureStrength!==0)
       await classicImage.decode();
     drawPaperGrain(texture,{paperWidth:width,paperHeight:height},settings,classicImage,0);
-    substrate.append(texture);
+    // GPU-backed canvases can print as solid black (WebKitGTK); print a still image of it.
+    let still=texture;
+    try {
+      still=Object.assign(new Image(),{className:texture.className,alt:'',src:texture.toDataURL()});
+      await still.decode();
+    } catch { still=texture; }
+    substrate.append(still);
     return {width,height,substrate,ornaments};
   }
   function motion() {

@@ -9,11 +9,12 @@ internal static class Program
 {
     private static int Main(string[] args)
     {
-        // WebKitGTK's DMA-BUF renderer fails on the NVIDIA proprietary driver
-        // ("Error 71 (Protocol error) dispatching to Wayland display"). Use the
-        // shared-memory path there unless the user chose otherwise.
+        // The NVIDIA driver's explicit sync breaks WebKitGTK's DMA-BUF renderer on
+        // Wayland ("Error 71 (Protocol error) dispatching to Wayland display").
+        // Turning off explicit sync keeps GPU rendering; disabling the DMA-BUF
+        // renderer instead also avoids the error but makes typing visibly laggy.
         if (File.Exists("/proc/driver/nvidia/version"))
-            setenv("WEBKIT_DISABLE_DMABUF_RENDERER", "1", 0);
+            setenv("__NV_DISABLE_EXPLICIT_SYNC", "1", 0);
         g_set_prgname("inkrail");
         g_set_application_name("Inkrail");
         if (!gtk_init_check(0, 0))
