@@ -1,0 +1,41 @@
+INKRAIL FOR LINUX
+Paper, ink, and a little room to write.
+
+1. Use the x64 archive for an Intel or AMD PC, or arm64 for an ARM-based PC.
+2. Extract the archive and keep the whole folder together.
+3. Run ./inkrail, or ./install.sh to add Inkrail to your app menu
+   (installs for your user only; ./install.sh --uninstall removes it).
+4. The .NET runtime is included. Inkrail uses your system's GTK 3 and
+   WebKitGTK 4.1, which most desktops already have:
+     Debian/Ubuntu: sudo apt install libwebkit2gtk-4.1-0
+     Fedora:        sudo dnf install webkit2gtk4.1
+     Arch:          sudo pacman -S webkit2gtk-4.1
+   Typewriter sounds use GStreamer (gstreamer1.0-plugins-good / gst-plugins-good).
+
+At your desk:
+  Ctrl+N                 New letter
+  Ctrl+Shift+O           Letter box (search, rename, trash and restore)
+  F2 in the letter box   Rename the focused letter
+  Ctrl+,                 Make it yours
+  Ctrl+B / I / U         Bold / italic / underline
+  Ctrl+\                 Clear inline formatting
+  Ctrl+Shift+F           Focus mode
+  Ctrl+Alt+L             Night writing (or click the capsule)
+  Ctrl+Shift+M           Sound on / off
+  Ctrl+O                 Import text or Markdown
+  Ctrl+S                 Save now (writing also autosaves)
+  Ctrl+Shift+E           Export text
+  Alt+F or the top …     Open the file and writing menu
+
+Libraries:
+  Default library: ~/.local/share/Inkrail/Library
+  Preferences:    ~/.local/share/Inkrail/preferences.json
+  The library and letter formats match Inkrail for Windows, so a library
+  folder can be moved between the two.
+
+Options:
+  inkrail -data <folder>   Use a separate profile (preferences and library)
+
+To move your library, use Make it yours > Storage > Change location and select
+an empty folder. Inkrail copies and verifies the library. Your old copy remains
+in place. Deleted letters are restorable for 30 days.

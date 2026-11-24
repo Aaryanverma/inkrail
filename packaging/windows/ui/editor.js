@@ -841,6 +841,12 @@ export function mountEditor(surface, {onChange=()=>{}, onMove=()=>{}, onSound=()
   function onKey(event) {
     if(composing||event.isComposing||event.keyCode===229) return;
     const key=event.key.toLowerCase();
+    if((event.key==='Backspace'||event.key==='Delete')&&!event.altKey&&!event.metaKey) {
+      // Nothing to delete: WebKit would otherwise remove the editor's own empty
+      // line natively, without a beforeinput, and later edits would fail.
+      const [a,b]=readSelection()||selection;
+      if(a===b&&(event.key==='Backspace'?a===0:a===text.length)) { event.preventDefault(); return; }
+    }
     if((event.ctrlKey||event.metaKey)&&!event.altKey) {
       const name=key==='z'?(event.shiftKey?'redo':'undo'):key==='y'?'redo':({b:'bold',i:'italic',u:'underline','\\':'clearFormatting'})[key];
       if(name) { event.preventDefault();event.stopPropagation();command(name);return; }
@@ -931,6 +937,9 @@ export function mountEditor(surface, {onChange=()=>{}, onMove=()=>{}, onSound=()
   node.addEventListener('compositionend',e=>finishComposition(e.data??''),options);
   node.addEventListener('input',()=>{
     if(pendingNativeCommit!==null)finishComposition(pendingNativeCommit);
+    // A native edit that bypassed beforeinput can drop line elements; rebuild
+    // them from the text model so the next keystroke has a line to land in.
+    else if(!composing&&node.children.length!==rendered.length) { render(true); writeSelection(); }
   },options);
   document.addEventListener('selectionchange',watchSelection,options);
   scroller.addEventListener('scroll',scheduleMove,options);

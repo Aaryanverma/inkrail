@@ -44,3 +44,16 @@ button{color:inherit;font:inherit}button:focus-visible,[role=menuitem]:focus-vis
   #letter-print{position:static;visibility:visible;print-color-adjust:exact;-webkit-print-color-adjust:exact}
   #letter-print .ink-desk__substrate{position:fixed}
 }
+/* Linux: the desk is the title area (window-chrome.js). Controls line up with
+   the header row (58px) and share its icon style. */
+.w-controls{position:fixed;z-index:20;top:15px;right:12px;display:flex;gap:2px;color:#999c8d}
+.w-btn:hover{background:#9b9c8524;color:#edeede}
+.w-close:hover{background:#ad654870;color:#f5efe4}
+[data-fullscreen=true] .w-controls{display:none}
+/* Keep the word count clear of the controls when the window is narrow. */
+[data-chrome=native]:not([data-fullscreen=true]) .s-head{padding-right:max(0px,calc(112px - (100vw - var(--paper-width,720px))/2))}
+.w-hint{position:fixed;z-index:21;top:18px;left:50%;transform:translate(-50%,-8px);padding:7px 14px;border-radius:999px;
+  background:rgb(20 22 21/.82);color:#cacbb8;font:12px/1 "Courier New",monospace;letter-spacing:.4px;
+  opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease}
+.w-hint--shown{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){.w-hint{transition:none}}

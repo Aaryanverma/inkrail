@@ -338,11 +338,43 @@ function embossPath(style) {
   }
   return '';
 }
+// The maker's mark is cut out with SVG masks: WebKit ignores CSS mask images on
+// SVG shapes and would paint them as solid boxes. Ids are unique per copy.
+let maskIds = 0;
+function markMasks(prefix, x, y, w, h, edges = []) {
+  const image = (dx, dy, tone) => `<image href="${asset('maker-mark.png')}" x="${x+dx}" y="${y+dy}" width="${w}" height="${h}" preserveAspectRatio="none" filter="url(#${prefix}-${tone})"/>`;
+  const tone = (name, v) => `<filter id="${prefix}-${name}" color-interpolation-filters="sRGB"><feColorMatrix values="0 0 0 0 ${v} 0 0 0 0 ${v} 0 0 0 0 ${v} 0 0 0 1 0"/></filter>`;
+  // Luminance masks: white shows, black (drawn over it) cuts away.
+  const mask = (name, content) => `<mask id="${prefix}-${name}" maskUnits="userSpaceOnUse" x="${x-4}" y="${y-4}" width="${w+8}" height="${h+8}">${content}</mask>`;
+  return `<defs>${tone('white',1)}${tone('black',0)}${mask('face',image(0,0,'white'))}${
+    edges.map(([name,dx,dy]) => mask(name, image(dx,dy,'white')+image(0,0,'black'))).join('')}</defs>`;
+}
+// Printing ignores SVG masks (WebKitGTK prints the shapes as boxes), so the
+// printed emboss is a still image composed the same way: shadow and highlight
+// edges (offset mark minus the mark), then the flat letterface.
+async function makerMarkStill() {
+  const mark = new Image();
+  mark.src = asset('maker-mark.png');
+  await mark.decode();
+  const scale = 4, size = 96 * scale, out = canvas(size, size), ctx = out.getContext('2d');
+  for (const [dx, dy, color, edge] of [[-.7,-.9,'rgb(75 68 52 / .9)',true],[.72,1,'rgb(255 252 237 / .95)',true],[0,0,'rgb(100 90 68 / .32)',false]]) {
+    const layer = canvas(size, size), c = layer.getContext('2d');
+    c.scale(scale, scale);
+    c.drawImage(mark, 15 + dx, 20.5 + dy, 66, 55);
+    if (edge) { c.globalCompositeOperation = 'destination-out'; c.drawImage(mark, 15, 20.5, 66, 55); }
+    c.globalCompositeOperation = 'source-in'; c.fillStyle = color; c.fillRect(0, 0, 96, 96);
+    ctx.drawImage(layer, 0, 0);
+  }
+  return out.toDataURL();
+}
 function setEmboss(node, style) {
   if (style === 'makerMark') {
-    node.innerHTML = `<rect class="ink-desk__seal-shadow" width="96" height="96"/>
-      <rect class="ink-desk__seal-highlight" width="96" height="96"/>
-      <rect class="ink-desk__seal-face" width="96" height="96"/>`;
+    const p = 'mm' + (++maskIds);
+    // A 66px mark centred in the 96px emboss (6:5), as embossRim draws it.
+    node.innerHTML = markMasks(p, 15, 20.5, 66, 55, [['shadow',-.7,-.9],['highlight',.72,1]]) +
+      `<rect class="ink-desk__seal-shadow" width="96" height="96" mask="url(#${p}-shadow)"/>
+      <rect class="ink-desk__seal-highlight" width="96" height="96" mask="url(#${p}-highlight)"/>
+      <rect class="ink-desk__seal-face" width="96" height="96" mask="url(#${p}-face)"/>`;
     return;
   }
   const path = embossPath(style);
@@ -390,9 +422,10 @@ function deskAccentArt(kind){
 
 function capsuleArt(style, trim, lit) {
   if (style === 'classic') {
-    return `<g class="ink-desk__engraving">
-      <rect x="73" y="17.67" width="14" height="11.67" fill="white" fill-opacity=".34"/>
-      <rect x="73" y="17.17" width="14" height="11.67" fill="var(--engraving-color)"/>
+    const p = 'mm' + (++maskIds), lip = 'mm' + (++maskIds);
+    return `<g class="ink-desk__engraving">${markMasks(lip, 73, 17.67, 14, 11.67)}${markMasks(p, 73, 17.17, 14, 11.67)}
+      <rect x="73" y="17.67" width="14" height="11.67" fill="white" fill-opacity=".34" mask="url(#${lip}-face)"/>
+      <rect x="73" y="17.17" width="14" height="11.67" fill="var(--engraving-color)" mask="url(#${p}-face)"/>
     </g>`;
   }
   const textures={brushedSteel:'brushed',champagne:'brushed',walnut:'wood',porcelain:'ceramic',
@@ -679,6 +712,8 @@ export function mountDesk(root, callbacks = {}) {
     }
     if (settings.paperEmbossing && settings.paperEmbossing!=='none') {
       const mark=emboss.cloneNode(true);
+      if (settings.paperEmbossing==='makerMark')
+        mark.innerHTML=`<image href="${await makerMarkStill()}" width="96" height="96"/>`;
       mark.hidden=false;
       css(mark,{'left':Math.max(60,width-77)+'px','top':'77px','transform':'translate(-50%,-50%)'});
       ornaments.append(mark);
@@ -686,7 +721,13 @@ export function mountDesk(root, callbacks = {}) {
     if (['classic','cotton'].includes(settings.paperTexture ?? 'classic') && settings.textureStrength!==0)
       await classicImage.decode();
     drawPaperGrain(texture,{paperWidth:width,paperHeight:height},settings,classicImage,0);
-    substrate.append(texture);
+    // GPU-backed canvases can print as solid black (WebKitGTK); print a still image of it.
+    let still=texture;
+    try {
+      still=Object.assign(new Image(),{className:texture.className,alt:'',src:texture.toDataURL()});
+      await still.decode();
+    } catch { still=texture; }
+    substrate.append(still);
     return {width,height,substrate,ornaments};
   }
   function motion() {
