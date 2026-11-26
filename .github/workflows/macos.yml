@@ -111,8 +111,35 @@ jobs:
           compression-level: 0
           overwrite: true
 
+  linux:
+    name: Linux GTK/WebKit host
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install GTK and WebKitGTK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-gi gir1.2-gtk-3.0 gir1.2-webkit2-4.1 \
+            gstreamer1.0-plugins-base gstreamer1.0-plugins-good xdg-utils
+      - name: Test the RPC bridge and library format
+        run: python3 scripts/check-linux-host.py
+      - name: Build the portable Linux bundle
+        run: python3 packaging/linux/build-linux.py --output dist/Inkrail-Linux.tar.gz
+      - name: Verify the bundle manifest
+        run: python3 packaging/linux/build-linux.py --check --bundle dist/Inkrail-Linux-x86_64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Inkrail-Linux
+          path: dist/Inkrail-Linux.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          overwrite: true
+
   verify:
-    name: Verify all three ZIPs
+    name: Verify the Mac and Windows ZIPs
     needs: [macos, macos-intel, windows]
     runs-on: ubuntu-latest
     steps:
@@ -125,9 +152,9 @@ jobs:
       - run: python3 scripts/check-release-zips.py archives
 
   release:
-    name: Attach ZIPs to the tagged release
+    name: Attach desktop builds to the tagged release
     if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
-    needs: verify
+    needs: [verify, linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -140,14 +167,14 @@ jobs:
           pattern: Inkrail-*
           path: archives
           merge-multiple: true
-      - name: Publish ZIPs as release assets
+      - name: Publish desktop builds as release assets
         working-directory: archives
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
         run: |
-          assets=(Inkrail.zip Inkrail-Windows-x64.zip Inkrail-Windows-arm64.zip)
+          assets=(Inkrail.zip Inkrail-Windows-x64.zip Inkrail-Windows-arm64.zip Inkrail-Linux.tar.gz)
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "${assets[@]}" --clobber
           else

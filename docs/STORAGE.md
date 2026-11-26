@@ -9,10 +9,11 @@ current folder, including a custom location.
 | --- | --- | --- |
 | macOS | `~/Library/Application Support/Inkrail/` | **Writing → Show Local Files** |
 | Windows | `%APPDATA%\Inkrail\Library` | **Make it yours → Storage → Show in File Explorer** |
+| Linux | `$XDG_DATA_HOME/inkrail/Library` (usually `~/.local/share/inkrail/Library`) | **Make it yours → Storage → Show local files** |
 
-To move one letter between Mac and Windows, choose **File → Export Markdown…**
-on Mac. On Windows, press **Alt+F** and choose **Export Markdown…**. Import the saved
-`.md` file with **⌘O** on Mac or **Ctrl+O** on Windows. Markdown preserves
+To move one letter between Mac, Windows and Linux, choose **File → Export Markdown…**
+on Mac. On Windows and Linux, press **Alt+F** and choose **Export Markdown…**. Import the saved
+`.md` file with **⌘O** on Mac or **Ctrl+O** on Windows and Linux. Markdown preserves
 the formatting and a wax seal’s inscription, shape and color when you reimport
 the letter into Inkrail. **Export Text…** saves plain text, including the seal
 inscription. **Export Letter as PDF…** preserves the finished stationery and
@@ -37,7 +38,8 @@ place when it switches folders. Use the new folder for future backups.
 
 If a copy fails, some files may already be in the destination. Retry with a
 fresh, empty folder. Appearance and sound settings stay on the computer.
-Windows keeps them in `%APPDATA%\Inkrail\preferences.json`.
+Windows keeps them in `%APPDATA%\Inkrail\preferences.json`; Linux keeps them in
+`$XDG_DATA_HOME/inkrail/preferences.json`.
 
 ### Bring a Mac library to a new Windows installation
 
@@ -62,13 +64,22 @@ file, the upgrade keeps the Store version active and saves the other version
 beside it. The recovery notice lists those paths. Include them when backing up
 the library.
 
+### Bring a library to Linux
+
+Close Inkrail everywhere, then copy the **contents** of a Mac
+`~/Library/Application Support/Inkrail/Library` or Windows
+`%APPDATA%\Inkrail\Library` folder into a new or empty
+`$XDG_DATA_HOME/inkrail/Library` folder. Keep `Letters`,
+`Recently Deleted`, backups and any `Recovery` folder together. The Linux host
+reads the same JSON format, including older numeric dates, without conversion.
+
 ### iCloud Drive on Mac
 
 You can choose a library folder in iCloud Drive. iCloud handles syncing
 outside Inkrail. Keep a separate backup and use one Mac at a time to edit
 the library.
 
-## Recover a changed or damaged letter on Mac or Windows
+## Recover a changed or damaged letter on Mac, Windows or Linux
 
 If another app, backup or sync service replaces an open letter, Inkrail checks
 its saved contents before writing. If Inkrail reports that the saved copy
@@ -84,7 +95,7 @@ Recently Deleted. Restore brings the readable copy back to Letters.
 
 ## Recently Deleted keeps letters for 30 days
 
-Open the letter box with **⇧⌘O** on Mac or **Ctrl+Shift+O** on Windows.
+Open the letter box with **⇧⌘O** on Mac or **Ctrl+Shift+O** on Windows and Linux.
 Choose **Recently deleted**, then **Restore** beside the letter within
 30 days of deletion.
 

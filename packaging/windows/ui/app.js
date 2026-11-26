@@ -167,7 +167,7 @@ async function action(name,id,value){
  case 'focus':state.focus=!state.focus;applyAppearance();return true;
  case 'night':setPrefs({nightMode:!state.settings.nightMode});return true;
  case 'sound':setPrefs({soundEnabled:!state.settings.soundEnabled});return true;
- case 'about':message('Inkrail for Windows\nPaper, ink, and a little room to write.\n\nMade with ❤ by Aaryan Verma.\nOpen source · MIT license.');return true;
+ case 'about':{const platform=/Linux/i.test(navigator.userAgent)?'Linux':'Windows';const port=platform==='Linux'?'\nPorted with ❤ by Meraj Molla.':'';message(`Inkrail for ${platform}\nPaper, ink, and a little room to write.\n\nMade with ❤ by Aaryan Verma.${port}\nOpen source · MIT license.`);return true;}
  }
  return false;
 }
