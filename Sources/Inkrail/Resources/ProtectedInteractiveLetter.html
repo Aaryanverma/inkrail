@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<title>A private letter</title>
+<style>
+:root{--grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.77' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath d='M0 0h160v160H0z' filter='url(%23g)' opacity='.75'/%3E%3C/svg%3E")}
+*{box-sizing:border-box}
+html{min-height:100%;background:#1b302a;color:#292b27;font-family:Georgia,serif}
+body{min-height:100vh;margin:0;isolation:isolate}
+body::before,body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none}
+body::before{background:radial-gradient(ellipse at 34% 25%,#5c6753 0%,#384d40 26%,#233b32 54%,#142a24 85%,#10211e 100%)}
+body::after{background-image:var(--grain);background-size:265px;opacity:.095;mix-blend-mode:soft-light}
+button{font:inherit;color:inherit}
+button:focus-visible{outline:2px solid #eddaa8;outline-offset:6px}
+
+#cover{--tug-duration:680ms;min-height:100vh;min-height:100svh;display:grid;place-items:center;position:relative}
+#open-envelope{width:min(620px,calc(100% - 44px),max(380px,90vh));display:block;position:relative;padding:0;margin:90px auto 74px;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent;perspective:1300px}
+#open-envelope:focus-visible{outline:0}
+#open-envelope:focus-visible .action-label{outline:2px solid #f3dfad;outline-offset:9px;border-radius:2px}
+#envelope{position:relative;display:block;width:100%;aspect-ratio:1.7;transform:rotate(-3deg);border-radius:5px;background:#bfb295;box-shadow:0 2px 2px #0a1b17aa,5px 10px 12px -4px #0b1b1690,14px 29px 36px -13px #071610ba,28px 53px 65px -24px #061710b0;transition:transform .45s,box-shadow .45s}
+.envelope-layer,.flap-face{position:absolute;inset:0;display:block;width:100%;height:100%;pointer-events:none}
+.shell{border-radius:inherit;overflow:hidden;background:linear-gradient(145deg,#dfd2ae,#b8a677 70%,#d6c8a4)}
+.liner{position:absolute;inset:1.5% 1% 0;background:repeating-linear-gradient(135deg,#585e48 0 2px,#777a5d 2px 4px,#687057 4px 9px,#b6ac81 9px 10px,#677055 10px 15px);clip-path:polygon(0 0,100% 0,52% 72%,48% 72%)}
+.insert{position:absolute;left:4%;right:4%;top:4%;bottom:8%;border-radius:2px;background:linear-gradient(120deg,#fcf6df,#ded4b5);border:1px solid #eee6ca;transform:translateY(7%)}
+.pocket{border-radius:inherit;overflow:hidden;filter:drop-shadow(0 -1px 1px #66543944)}
+.flap{transform-origin:50% 0;transform-style:preserve-3d;filter:drop-shadow(1px 4px 2px #6c543c4a)}
+.flap svg{overflow:visible}
+.flap-cut,.paper-edge{position:absolute;inset:0;background-image:var(--grain);background-size:280px;mix-blend-mode:multiply;opacity:.18;pointer-events:none}
+.flap-cut{clip-path:polygon(0 0,100% 0,53% 58%,50% 60%,47% 58%)}
+.paper-edge{border-radius:inherit;clip-path:polygon(0 0,50% 60%,100% 0,100% 100%,0 100%)}
+.salutation{position:absolute;right:8%;bottom:11%;font:italic clamp(20px,4.8vw,37px)/1 "Snell Roundhand","Segoe Script","Apple Chancery",Georgia,serif;transform:rotate(-5deg);color:#68634c;opacity:.85}
+.seal-mount{--seal-size:clamp(86px,22vw,150px);position:absolute;width:var(--seal-size);aspect-ratio:1.25;left:50%;top:55%;transform:translate(-50%,-50%) rotate(3deg);filter:drop-shadow(1px 3px 2px #48342455)}
+
+.action-label{display:inline-flex;align-items:center;justify-content:center;gap:.8em;position:relative;margin-top:clamp(40px,8vh,72px);font:italic clamp(21px,4.2vw,28px)/1.2 Georgia,serif;color:#f5efdf;text-shadow:0 1px 4px #091b17}
+.action-label::before,.action-label::after{content:"";display:block;height:1px;width:30px;background:linear-gradient(90deg,transparent,#c1af82)}
+.action-label::after{transform:scaleX(-1)}
+#sound-toggle{position:absolute;top:18px;right:max(16px,env(safe-area-inset-right));min-height:44px;min-width:44px;border:0;background:transparent;color:#ece6d6;display:inline-flex;align-items:center;gap:8px;padding:9px;cursor:pointer;font:12px/1.3 system-ui,sans-serif}
+#sound-toggle svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+#sound-toggle [data-muted],#sound-toggle[aria-pressed="false"] [data-on]{display:none}
+#sound-toggle[aria-pressed="false"] [data-muted]{display:block}
+@media(hover:hover){#open-envelope:hover #envelope{transform:translateY(-3px) rotate(-2deg)}#sound-toggle:hover,.action-label:hover{color:#fff}}
+
+#seal-art{display:block;width:100%;height:100%}
+#cover[data-seal-state="resisting"] .action-label .invitation,.action-label .held{display:none}
+#cover[data-seal-state="resisting"] .action-label .held{display:inline}
+@media(prefers-reduced-motion:no-preference){
+  #cover[data-seal-state="resisting"] .flap{animation:tug-flap var(--tug-duration) ease-in-out}
+  #cover[data-seal-state="resisting"] #seal-art{animation:hold-fast var(--tug-duration) ease-in-out;transform-origin:50% 66%}
+  @keyframes tug-flap{
+    0%,100%{transform:none;filter:drop-shadow(1px 4px 2px #6c543c4a)}
+    38%,52%{transform:perspective(900px) rotateX(-15deg) skewX(-.8deg);filter:drop-shadow(1px 9px 4px #62462d68)}
+    76%{transform:perspective(900px) rotateX(2deg);filter:drop-shadow(1px 2px 1px #6c543c55)}
+  }
+  @keyframes hold-fast{
+    0%,100%{transform:none}
+    38%,52%{transform:translate(-1%,-4%) rotate(-4deg)}
+    76%{transform:translateY(.6%) rotate(1deg)}
+  }
+}
+#open-envelope:disabled{cursor:default}
+#instructions{display:block;max-width:34em;margin:1em auto;color:#ece6d6;font:14px/1.45 system-ui,sans-serif}
+[hidden],dialog:not([open]),#unlock-status:empty{display:none!important}
+dialog{width:min(390px,calc(100% - 32px));max-height:calc(100% - 24px);overflow:auto;box-sizing:border-box;border:1px solid #ac9d7a;border-radius:4px;padding:clamp(24px,6vw,36px);color:#312f26;background:linear-gradient(145deg,#faf2da,#e8ddbe);box-shadow:0 2px 1px #8b8069,4px 16px 50px #13211985;font:16px/1.45 system-ui,sans-serif}
+dialog::backdrop{background:#10231eca}
+dialog h1{margin:0;font:normal clamp(28px,5vw,34px)/1.14 Georgia,serif;letter-spacing:-.025em}
+dialog p{margin:.6em 0 0}
+#password-hint{color:#575347;font-size:.95em}
+form{margin-top:20px}
+label{display:block;font-size:.88em;font-weight:600;margin-bottom:5px}
+.entry{display:flex;align-items:stretch;background:#fff9e9;border:1px solid #93866c;border-radius:5px}
+.entry:focus-within{outline:2px solid #345747;outline-offset:2px}
+input{width:100%;min-width:0;border:0;padding:10px;background:transparent;font:inherit;color:inherit;outline:0}
+dialog button{cursor:pointer;font:inherit}
+dialog button:focus-visible{outline:2px solid #345747;outline-offset:3px}
+#show-password{border:0;padding:0 10px;background:transparent;color:#584e3c;font-size:.85em}
+.actions{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:20px}
+.actions button{min-height:44px;padding:8px 14px;border-radius:5px}
+#unlock-letter{border:0;background:#314b3e;color:#fff8e6}
+#unlock-letter:disabled{opacity:.7;cursor:wait}
+#cancel-unlock{border:0;background:transparent;color:#575347}
+#unlock-status{color:#793a2c;font-size:.9em}
+@media(max-width:480px){#open-envelope{width:calc(100% - 36px)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important}}
+@media print{body::before,body::after,#sound-toggle,.action-label,#password-dialog{display:none!important}}
+</style>
+</head>
+<body>
+<main aria-label="A private letter">
+<div id="cover">
+<button type="button" id="open-envelope" aria-label="Open letter" aria-haspopup="dialog" aria-controls="password-dialog" aria-describedby="instructions" disabled>
+<span id="envelope" aria-hidden="true">
+<span class="envelope-layer shell"><span class="liner"></span></span>
+<span class="insert"></span>
+<svg class="envelope-layer pocket" viewBox="0 0 680 400" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+<defs>
+<linearGradient id="left-fold" x1="0" x2="1" y1="0" y2=".9" gradientUnits="objectBoundingBox"><stop stop-color="#e9dfc4"/><stop offset="1" stop-color="#baab88"/></linearGradient>
+<linearGradient id="right-fold" x1="0" x2="1" y1=".9" y2="0" gradientUnits="objectBoundingBox"><stop stop-color="#ccbd9a"/><stop offset="1" stop-color="#e5d8b7"/></linearGradient>
+<linearGradient id="bottom-fold" x1="0" x2=".95" y1="0" y2="1"><stop stop-color="#eee3c7"/><stop offset=".6" stop-color="#dcd0ae"/><stop offset="1" stop-color="#c8b997"/></linearGradient>
+</defs>
+<path d="M0 0 340 218 0 400Z" fill="url(#left-fold)"/><path d="M680 0 340 218 680 400Z" fill="url(#right-fold)"/>
+<path d="M0 400 316 192q24-17 48 0l316 208Z" fill="url(#bottom-fold)" stroke="#a89674" stroke-width="1.6"/>
+<path d="m2 397 315-203q23-17 46 0l315 204" fill="none" stroke="#f3e9d2" stroke-width="1.15"/>
+</svg>
+<span class="envelope-layer paper-edge"></span>
+<span class="salutation">For you</span>
+<span class="envelope-layer flap">
+<svg class="flap-face" viewBox="0 0 680 400" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+<defs><linearGradient id="top-fold" x1=".12" x2=".9" y1="0" y2=".94"><stop stop-color="#f3ebd4"/><stop offset=".53" stop-color="#e6dbbc"/><stop offset="1" stop-color="#d6c6a3"/></linearGradient></defs>
+<path d="M0 4Q0 0 4 0h672q4 0 4 4L359 226q-19 15-38 0Z" fill="url(#top-fold)"/>
+<path d="M3 3 322 223q18 14 36 0L677 3" fill="none" stroke="#f8efdc" stroke-width="1.8" opacity=".8"/>
+<path d="M11 4 325 219q15 11 30 0L669 4" fill="none" stroke="#c8b99c" stroke-width=".8" opacity=".75"/>
+</svg><span class="flap-cut"></span>
+</span>
+<span class="seal-mount"><svg id="seal-art" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 120" aria-hidden="true" focusable="false">
+<defs>
+  <linearGradient id="wax-rim" x1="0.2" y1="0" x2="0.75" y2="1"><stop stop-color="#c47a62"/><stop offset=".2" stop-color="#9e5143"/><stop offset=".59" stop-color="#733229"/><stop offset=".84" stop-color="#9d5142"/><stop offset="1" stop-color="#54251f"/></linearGradient>
+  <radialGradient id="wax-die" cx=".36" cy=".27" r=".76"><stop stop-color="#a65848"/><stop offset=".65" stop-color="#954739"/><stop offset="1" stop-color="#79372e"/></radialGradient>
+  <linearGradient id="wax-edge" x1=".2" y1="0" x2=".85" y2="1"><stop stop-color="#7d362a"/><stop offset=".53" stop-color="#8d4435"/><stop offset=".83" stop-color="#ca8a67"/><stop offset="1" stop-color="#ad6b50"/></linearGradient>
+</defs>
+<path d="M72 9c9-1 14 1 23 2 12 2 20 11 24 23 3 6 5 14 6 22 1 12-1 22-9 32-6 10-16 15-28 18-9 3-17 5-26 3-12-1-20-5-29-12-10-8-14-14-16-26-2-9 1-20 4-29 4-10 10-20 19-25 10-5 20-7 32-8Z" fill="url(#wax-rim)" stroke="#6d3429" stroke-width="1.4"/>
+<path d="M33 34c7-11 17-15 31-18m-41 47c-1 12 4 23 12 29m48 11c14-3 24-9 31-20" fill="none" stroke="#dc9678" stroke-width="1.8" stroke-linecap="round" opacity=".55"/>
+<ellipse cx="74" cy="58" rx="42.3" ry="41.3" fill="url(#wax-die)" stroke="url(#wax-edge)" stroke-width="3.2"/>
+<ellipse cx="74" cy="58" rx="37.9" ry="37.2" fill="none" stroke="#d08c6a" stroke-width=".9" opacity=".66"/>
+<g fill="none" stroke="#6a3129" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 -1)"><rect x="62" y="54" width="24" height="18" rx="3"/><path d="M66 54v-6a8 8 0 0 1 16 0v6m-8 8v4"/></g>
+<g fill="none" stroke="#e3bc8b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="62" y="54" width="24" height="18" rx="3"/><path d="M66 54v-6a8 8 0 0 1 16 0v6m-8 8v4"/></g>
+</svg></span>
+</span>
+<span class="action-label" aria-hidden="true"><span class="invitation">Open letter</span><span class="held">Still sealed</span></span>
+<span id="instructions">Save this file and open it in a browser with JavaScript enabled.</span>
+</button>
+<button id="sound-toggle" hidden type="button" aria-label="Opening sound" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h4l5-4v14l-5-4H3z"/><g data-on><path d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></g><path data-muted d="m16 9 5 6m0-6-5 6"/></svg><span>Sound on</span></button>
+</div>
+</main>
+<dialog id="password-dialog" aria-labelledby="title" aria-describedby="password-hint">
+  <h1 id="title">A private letter</h1>
+  <p id="password-hint">Enter the password from the sender to open this letter.</p>
+  <form id="unlock-form" autocomplete="off">
+    <label for="letter-password">Letter password</label>
+    <div class="entry">
+      <input id="letter-password" type="password" required autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-describedby="password-hint unlock-status" autofocus>
+      <button id="show-password" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+    </div>
+    <p id="unlock-status" role="status" aria-live="polite"></p>
+    <div class="actions">
+      <button id="cancel-unlock" type="button">Cancel</button>
+      <button id="unlock-letter" type="submit">Open letter</button>
+    </div>
+  </form>
+</dialog>
+<script type="application/json" id="encrypted-letter">__INKRAIL_ENCRYPTED__</script>
+<script>
+(() => {
+  'use strict';
+  const cover = document.getElementById('cover');
+  const envelope = document.getElementById('open-envelope');
+  const dialog = document.getElementById('password-dialog');
+  const form = document.getElementById('unlock-form');
+  const instructions = document.getElementById('instructions');
+  const password = document.getElementById('letter-password');
+  const submit = document.getElementById('unlock-letter');
+  const show = document.getElementById('show-password');
+  const status = document.getElementById('unlock-status');
+  const sound = document.getElementById('sound-toggle');
+  if (!window.crypto || !window.crypto.subtle || !window.TextEncoder || !window.TextDecoder ||
+      typeof dialog.showModal !== 'function') {
+    instructions.textContent = 'Save this file and open it in a current browser with secure decryption support.';
+    return;
+  }
+  const bytes = value => Uint8Array.from(atob(value), character => character.charCodeAt(0));
+  let salt, iv, ciphertext;
+  try {
+    const data = JSON.parse(document.getElementById('encrypted-letter').textContent);
+    if (data.version !== 1) {
+      instructions.textContent = 'This letter uses an encryption format this reader cannot open. Ask the sender for a new copy.';
+      return;
+    }
+    salt = bytes(data.salt);
+    iv = bytes(data.iv);
+    ciphertext = bytes(data.ciphertext);
+    if (salt.length !== 16 || iv.length !== 12 || ciphertext.length <= 16) throw new Error();
+  } catch {
+    instructions.textContent = 'This file could not be read. Ask the sender for another copy.';
+    return;
+  }
+  instructions.hidden = true;
+  envelope.removeAttribute('aria-describedby');
+  envelope.disabled = false;
+  sound.hidden = false;
+  let soundOn = true;
+  sound.addEventListener('click', () => {
+    soundOn = !soundOn;
+    sound.setAttribute('aria-pressed', String(soundOn));
+    sound.querySelector('span').textContent = soundOn ? 'Sound on' : 'Sound off';
+  });
+  // Decryption and a failed attempt's animation can both finish after cancellation.
+  let pending = null;
+  function promptForPassword() {
+    if (!dialog.open) dialog.showModal();
+    password.focus();
+  }
+  envelope.addEventListener('click', () => { if (!pending) promptForPassword(); });
+  function closeAudio(attempt) {
+    if (attempt?.audioContext && attempt.audioContext.state !== 'closed') {
+      attempt.audioContext.close().catch(() => {});
+    }
+  }
+  function resetFields() {
+    password.value = '';
+    password.type = 'password';
+    password.removeAttribute('aria-invalid');
+    password.readOnly = false;
+    show.textContent = 'Show';
+    show.setAttribute('aria-pressed', 'false');
+    show.disabled = false;
+    submit.disabled = false;
+    submit.textContent = 'Open letter';
+    status.textContent = '';
+  }
+  function cancelUnlock() {
+    closeAudio(pending);
+    pending = null;
+    delete cover.dataset.sealState;
+    resetFields();
+    if (dialog.open) dialog.close();
+    envelope.focus({preventScroll:true});
+  }
+  document.getElementById('cancel-unlock').addEventListener('click', cancelUnlock);
+  dialog.addEventListener('cancel', event => { event.preventDefault(); cancelUnlock(); });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && cover.dataset.sealState === 'resisting') {
+      event.preventDefault();
+      cancelUnlock();
+    }
+  });
+  window.addEventListener('pagehide', () => { if (dialog.open || pending) cancelUnlock(); });
+  show.addEventListener('click', () => {
+    const reveal = password.type === 'password';
+    password.type = reveal ? 'text' : 'password';
+    show.textContent = reveal ? 'Hide' : 'Show';
+    show.setAttribute('aria-pressed', String(reveal));
+  });
+  password.addEventListener('input', () => {
+    status.textContent = '';
+    password.removeAttribute('aria-invalid');
+  });
+  async function retryPassword(attempt) {
+    closeAudio(attempt);
+    attempt.audioContext = null;
+    resetFields();
+    if (matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+      cover.dataset.sealState = 'resisting';
+      dialog.close();
+      // A backgrounded reader may suspend its animation timeline.
+      const duration = parseFloat(getComputedStyle(cover).getPropertyValue('--tug-duration'));
+      await new Promise(resolve => setTimeout(resolve, duration));
+      if (pending !== attempt) return;
+      delete cover.dataset.sealState;
+    }
+    pending = null;
+    password.setAttribute('aria-invalid', 'true');
+    status.textContent = 'The seal held. Check the password and try again.';
+    promptForPassword();
+  }
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!dialog.open || pending || !password.value) return;
+    const attempt = {audioContext:null};
+    pending = attempt;
+    // Start the context during the submit gesture. WebKit may require a user
+    // gesture to resume audio after the asynchronous password check completes.
+    const Audio = window.AudioContext || window.webkitAudioContext;
+    if (soundOn && Audio) {
+      try {
+        attempt.audioContext = new Audio();
+        attempt.audioContext.resume().catch(() => {});
+      } catch { /* Opening the letter also works without audio. */ }
+    }
+    submit.disabled = true;
+    password.readOnly = true;
+    show.disabled = true;
+    submit.textContent = 'Unlocking…';
+    status.textContent = '';
+    let letter;
+    try {
+      const secret = new TextEncoder().encode(password.value);
+      let keyMaterial;
+      try {
+        keyMaterial = await crypto.subtle.importKey('raw', secret, 'PBKDF2', false, ['deriveKey']);
+      } finally {
+        secret.fill(0);
+      }
+      const key = await crypto.subtle.deriveKey(
+        {name:'PBKDF2', hash:'SHA-256', iterations:600000, salt},
+        keyMaterial, {name:'AES-GCM', length:256}, false, ['decrypt']
+      );
+      if (pending !== attempt) return;
+      const clear = await crypto.subtle.decrypt({name:'AES-GCM', iv, tagLength:128}, key, ciphertext);
+      try {
+        if (pending !== attempt) return;
+        letter = new TextDecoder('utf-8', {fatal:true}).decode(clear);
+      } finally {
+        new Uint8Array(clear).fill(0);
+      }
+    } catch {
+      if (pending === attempt) await retryPassword(attempt);
+      return;
+    }
+    pending = null;
+    resetFields();
+    dialog.close();
+    const sealImage = 'data:image/svg+xml,' + encodeURIComponent(document.getElementById('seal-art').outerHTML);
+    // Only the authenticated document reaches this point. Retain its original
+    // local URL so reloading the file reads the encrypted wrapper from disk.
+    document.open();
+    document.write(letter);
+    document.close();
+    document.getElementById('open-letter').dispatchEvent(new CustomEvent('inkrail:unlocked', {
+      detail:{soundOn, audioContext:attempt.audioContext, sealImage}
+    }));
+    window.addEventListener('pageshow', event => { if (event.persisted) location.reload(); });
+  });
+})();
+</script>
+</body>
+</html>

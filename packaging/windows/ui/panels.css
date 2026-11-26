@@ -153,6 +153,10 @@
 .ip-seal-choices .ip-select{appearance:auto;padding:4px 7px;}
 .ip-seal-form .ip-error{padding:0;}
 .ip-seal-form .ip-remove-seal{margin-right:auto;color:#793c32;}
+.ip-export-protection{display:grid;gap:10px;border-top:1px solid var(--ip-divider);padding-top:12px;}
+.ip-password-toggle{display:flex;align-items:center;gap:7px;cursor:pointer;}
+.ip-password-toggle input{margin:0;accent-color:var(--ip-accent);}
+.ip-password-fields{display:grid;gap:10px;}
 @media(max-width:575px){
   .ip-header{padding-inline:15px;}
   .ip-tabs{margin-inline:15px;}

@@ -24,6 +24,8 @@ extension Bundle {
     @Published var showLibrary = false
     @Published var showStudio = false
     @Published var sealEditorPage: Page?
+    @Published var interactiveExportPage: Page?
+    var canSealSelectedPage: Bool { selectedPage?.canApplySeal == true }
     @Published var focusMode = false
     @Published var errorMessage: String?
     weak var editor: (any LetterEditor)?
@@ -47,6 +49,8 @@ extension Bundle {
     }
     func export(markdown: Bool = false) {}
     func exportPDF() {}
+    func exportInteractiveLetter() {}
+    func saveInteractiveLetter(_ page: Page, seal: LetterSeal, password: String?) {}
 }
 struct LetterBox: View { var body: some View { EmptyView() } }
 struct StudioView: View { var body: some View { EmptyView() } }

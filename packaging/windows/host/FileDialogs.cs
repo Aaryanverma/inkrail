@@ -53,11 +53,11 @@ internal static class FileDialogs
         return safe;
     }
 
-    private static string? ChooseExportPath(IWin32Window owner, JsonElement args, string extension, string filter)
+    private static string? ChooseExportPath(IWin32Window owner, string name, string extension, string filter)
     {
         using var dialog = new SaveFileDialog {
             Title = "Keep a copy of your letter", DefaultExt = extension,
-            FileName = ExportName(args.GetProperty("body").GetString() ?? "") + "." + extension,
+            FileName = name + "." + extension,
             Filter = filter, OverwritePrompt = true, RestoreDirectory = true
         };
         return dialog.ShowDialog(owner) == DialogResult.OK ? Path.GetFullPath(dialog.FileName) : null;
@@ -69,22 +69,37 @@ internal static class FileDialogs
     internal static bool Export(IWin32Window owner, JsonElement args)
     {
         bool markdown = args.GetProperty("markdown").GetBoolean();
-        string? path = ChooseExportPath(owner, args, markdown ? "md" : "txt",
+        string name = ExportName(args.GetProperty("body").GetString() ?? "");
+        string? path = ChooseExportPath(owner, name, markdown ? "md" : "txt",
             markdown ? "Markdown file|*.md" : "Text file|*.txt");
         if (path is null) return false;
+        WriteTextExport(path, args.GetProperty("text").GetString() ?? "");
+        return true;
+    }
+
+    internal static bool ExportInteractive(IWin32Window owner, JsonElement args)
+    {
+        string? path = ChooseExportPath(owner, "A letter for you", "html", "Interactive letter|*.html");
+        if (path is null) return false;
+        WriteTextExport(path, args.GetProperty("html").GetString() ?? throw new InvalidDataException("The letter is missing."));
+        return true;
+    }
+
+    private static void WriteTextExport(string path, string text)
+    {
         string temporary = TemporaryExport(path);
         try
         {
-            File.WriteAllText(temporary, args.GetProperty("text").GetString() ?? "", Utf8);
+            File.WriteAllText(temporary, text, Utf8);
             File.Move(temporary, path, true);
-            return true;
         }
         finally { File.Delete(temporary); }
     }
 
     internal static async Task<bool> ExportPdf(IWin32Window owner, CoreWebView2 webView, JsonElement args)
     {
-        string? path = ChooseExportPath(owner, args, "pdf", "PDF document|*.pdf");
+        string name = ExportName(args.GetProperty("body").GetString() ?? "");
+        string? path = ChooseExportPath(owner, name, "pdf", "PDF document|*.pdf");
         if (path is null) return false;
         var settings = webView.Environment.CreatePrintSettings();
         settings.PageWidth = args.GetProperty("width").GetDouble() / 96;

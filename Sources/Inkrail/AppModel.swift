@@ -15,6 +15,7 @@ final class AppModel: ObservableObject {
         didSet {
             if selectedID != oldValue {
                 sealEditorPage = nil
+                interactiveExportPage = nil
                 if let selectedPage { editor?.display(selectedPage) }
             }
         }
@@ -36,6 +37,7 @@ final class AppModel: ObservableObject {
     @Published var showLibrary = false
     @Published var showStudio = false
     @Published var sealEditorPage: Page?
+    @Published var interactiveExportPage: Page?
     @Published var focusMode = false
     @Published var errorMessage: String?
     @Published private(set) var saveState = "Saved on this Mac"

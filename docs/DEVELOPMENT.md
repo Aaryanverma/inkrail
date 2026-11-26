@@ -62,6 +62,19 @@ From the v0.1.2 source root on macOS, run `swift test` for the core models,
 preferences and storage. Run `bash scripts/check-storage-model.sh` for autosave,
 recovery and native editing. Run `bash scripts/check-letter-pdf.sh` to check
 line wrapping, pagination and seal placement in the native PDF renderer.
+Run `bash scripts/check-interactive-letter.sh` to generate sample HTML letters
+in `.build/interactive-letter-check/` and check the seal, stationery, text
+escaping and private-title handling in the Mac exporter. Add `--reader` to
+exercise the password prompt and letter opening in WebKit. The Windows
+packaged editor check exercises the same HTML template through the Windows exporter.
+
+Password-protected exports encrypt the entire rendered UTF-8 HTML document
+using AES-256-GCM with a fresh 12-byte IV and a 16-byte authentication tag.
+Both exporters derive the key from the exact UTF-8 passphrase using
+PBKDF2-HMAC-SHA256 with 600,000 iterations and a fresh 16-byte salt. The outer
+HTML holds the version, salt, IV and ciphertext with the tag appended. The
+offline reader shows a generic sealed envelope. Activating it prompts for
+the passphrase. Successful decryption starts the opening animation.
 On Windows, run `dotnet run --project packaging/windows/tests/StorageChecks.csproj --configuration Release`
 to check the library and upgrade paths.
 

@@ -3,6 +3,7 @@ import {mountDesk} from './desk.js';
 import {mountEditor} from './editor.js';
 import {importMarkdown,exportMarkdown,exportPlainText} from './markdown.js';
 import {hasLetterText,normalizeSeal} from './seal.js';
+import {makeInteractiveLetter} from './interactive-letter.js';
 import {mountPanels,normalizeSettings,pageTitle} from './panels.js';
 import {Keys} from './audio.js';
 
@@ -59,6 +60,7 @@ function status(){const p=page(),s=p?.text||'';if(status.last!==s){status.last=s
  const sealed=Boolean(normalizeSeal(p?.seal)),label=sealed?'Edit seal…':'Seal letter…';
  buttons.seal.disabled=!hasLetterText(s);buttons.seal.title=label;buttons.seal.setAttribute('aria-label',label);
  const item=menu.querySelector('[data-command="seal"]');item.disabled=buttons.seal.disabled;item.firstElementChild.textContent=label;
+ menu.querySelector('[data-command="exportInteractive"]').disabled=buttons.seal.disabled;
  dot.classList.toggle('dirty',dirty.size>0);dot.title=state.status;saveState.textContent=state.status.toLowerCase();foot.classList.toggle('error',/failed|unavailable|not saved/i.test(state.status));
  if(p)date.textContent=new Date(p.createdAt).toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'}).toLocaleUpperCase();dirtySignal();}
 function applyAppearance(){const s=state.settings;desk.update({...s,focusMode:state.focus});editor.applySettings(s);panel.update(s);tools.classList.toggle('night',s.nightMode);for(const [k,ic,pressed,label] of [['sound',s.soundEnabled?'sound':'mute',s.soundEnabled,s.soundEnabled?'Mute sounds':'Turn sounds on'],['night',s.nightMode?'sun':'moon',s.nightMode,s.nightMode?'Day writing':'Night writing'],['focus','focus',state.focus,state.focus?'Exit Focus Mode':'Enter Focus Mode']]){const b=buttons[k];setIcon(b,ic);b.setAttribute('aria-pressed',String(pressed));b.setAttribute('aria-label',label);b.title=label;}formatButtons();}
@@ -148,6 +150,16 @@ async function action(name,id,value){
  case 'save':return flush();
  case 'import':{const result=await call('import');if(!result)return false;newLetter(result.markdown?importMarkdown(result.text):{text:result.text});await flush();return true;}
  case 'exportPDF':return exportPDF();
+ case 'exportInteractive': {
+  const letter = page();
+  if (!hasLetterText(letter?.text) || (id && id !== letter.id)) return false;
+  if (!id) {
+   panel.showSeal(letter, true);
+   return true;
+  }
+  const html = await makeInteractiveLetter(letter, state.settings, value.seal, value.password);
+  return call('exportInteractive', {html});
+ }
  case 'export':case 'exportMarkdown':{const p=page();if(!p)return false;const md=name==='exportMarkdown';return call('export',{text:md?exportMarkdown(p):exportPlainText(p),body:p.text,markdown:md});}
  case 'rename':{
   const p=library.get(id);if(!p)throw Error('The letter is no longer in the library.');
@@ -207,7 +219,7 @@ function invoke(name){
  if(['bold','italic','underline','clearFormatting','focus','night','sound'].includes(name)){void run();return;}
  pendingAction=pendingAction.then(run,run);
 }
-const menu=$('commands'),commands=[['new','New letter','Ctrl+N'],['import','Import text or Markdown…','Ctrl+O'],['save','Save now','Ctrl+S'],['seal','Seal letter…',''],['exportPDF','Export Letter as PDF…',''],['exportMarkdown','Export Markdown…',''],['export','Export text…','Ctrl+Shift+E'],null,['library','Letter box','Ctrl+Shift+O'],['settings','Make it yours…','Ctrl+,'],['clearFormatting','Clear inline formatting','Ctrl+\\'],['revealStorage','Show local files',''],null,['about','About Inkrail','']];
+const menu=$('commands'),commands=[['new','New letter','Ctrl+N'],['import','Import text or Markdown…','Ctrl+O'],['save','Save now','Ctrl+S'],['seal','Seal letter…',''],['exportInteractive','Export Interactive Letter',''],['exportPDF','Export Letter as PDF…',''],['exportMarkdown','Export Markdown…',''],['export','Export text…','Ctrl+Shift+E'],null,['library','Letter box','Ctrl+Shift+O'],['settings','Make it yours…','Ctrl+,'],['clearFormatting','Clear inline formatting','Ctrl+\\'],['revealStorage','Show local files',''],null,['about','About Inkrail','']];
 for(const entry of commands){if(!entry){menu.append(el('hr'));continue}const [id,label,key]=entry,b=el('button');b.type='button';b.role='menuitem';b.dataset.command=id;b.append(el('span','',label),el('small','',key));b.onclick=()=>{hideMenu();invoke(id)};menu.append(b);}
 let menuAnchor=null;
 function hideMenu(){menu.hidden=true;menuAnchor?.setAttribute('aria-expanded','false');menuAnchor=null;}
@@ -216,7 +228,7 @@ function showMenu(anchor){
  if(wasOpen){editor.focus();return;}
  const exportsOnly=anchor===buttons.export;
  menu.setAttribute('aria-label',exportsOnly?'Export letter':'File and writing commands');
- for(const item of menu.children)item.hidden=exportsOnly&&!['exportPDF','exportMarkdown','export'].includes(item.dataset.command);
+ for(const item of menu.children)item.hidden=exportsOnly&&!['exportPDF','exportInteractive','exportMarkdown','export'].includes(item.dataset.command);
  menuAnchor=anchor;anchor.setAttribute('aria-expanded','true');menu.hidden=false;
  const r=anchor.getBoundingClientRect();
  menu.style.left=Math.max(4,Math.min(innerWidth-menu.offsetWidth-4,r.left))+'px';

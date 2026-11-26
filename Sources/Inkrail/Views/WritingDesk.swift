@@ -6,6 +6,7 @@ struct WritingDesk: View {
     @EnvironmentObject private var model: AppModel
     @InkrailState private var headerHovered = false
     @InkrailState private var footerHovered = false
+    @InkrailState private var pendingExport: (page: Page, seal: LetterSeal, password: String?)?
 
     var body: some View {
         GeometryReader { geometry in
@@ -51,7 +52,19 @@ struct WritingDesk: View {
             StudioView().environmentObject(model)
         }
         .sheet(item: $model.sealEditorPage, onDismiss: { model.focusEditor() }) { page in
-            LetterSealSheet(existing: page.seal) { seal in model.setSeal(seal, for: page.id) }
+            LetterSealSheet(existing: page.seal) { seal, _ in model.setSeal(seal, for: page.id) }
+        }
+        .sheet(item: $model.interactiveExportPage, onDismiss: {
+            if let pendingExport {
+                self.pendingExport = nil
+                model.saveInteractiveLetter(pendingExport.page, seal: pendingExport.seal, password: pendingExport.password)
+            } else {
+                model.focusEditor()
+            }
+        }) { page in
+            LetterSealSheet(existing: page.seal, forExport: true) { seal, password in
+                if let seal { pendingExport = (page, seal, password) }
+            }
         }
         .alert("Your writing", isPresented: Binding(
             get: { model.errorMessage != nil },
@@ -241,6 +254,8 @@ struct PaperStage: View {
                 model.preferences.soundEnabled.toggle(); model.focusEditor()
             }
             Menu {
+                Button("Export Interactive Letter") { model.exportInteractiveLetter() }
+                    .disabled(!model.canSealSelectedPage)
                 Button("Export Letter as PDF…") { model.exportPDF() }
                 Button("Export Markdown…") { model.export(markdown: true) }
                 Button("Export Text…") { model.export() }

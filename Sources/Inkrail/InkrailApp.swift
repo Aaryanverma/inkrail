@@ -36,6 +36,8 @@ struct InkrailApp: App {
             }
             CommandGroup(replacing: .saveItem) {
                 Button("Save") { model.saveNow() }.keyboardShortcut("s")
+                Button("Export Interactive Letter") { model.exportInteractiveLetter() }
+                    .disabled(!model.canSealSelectedPage)
                 Button("Export Letter as PDF…") { model.exportPDF() }
                     .disabled(model.selectedPage == nil || model.paperSizeForExport == nil)
                 Button("Export Text…") { model.export() }.keyboardShortcut("e", modifiers: [.command, .shift])
@@ -48,7 +50,7 @@ struct InkrailApp: App {
                 Button("Open Letter Box") { model.showLibrary = true }
                     .keyboardShortcut("o", modifiers: [.command, .shift])
                 Button(model.selectedPage?.seal == nil ? "Seal Letter…" : "Edit Seal…") { model.openSealEditor() }
-                    .disabled(model.selectedPage?.canApplySeal != true || model.showLibrary || model.showStudio || model.sealEditorPage != nil)
+                    .disabled(!model.canSealSelectedPage)
                 Button("Clear Inline Formatting") {
                     NSApp.sendAction(#selector(InkTextView.clearLetterFormatting(_:)), to: nil, from: nil)
                 }

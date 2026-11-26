@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<title>A letter for you</title>
+<style>
+:root{
+  --unfold-delay:480ms;
+  --wax-atlas:url("data:image/png;base64,__INKRAIL_WAX__");
+  --grain:url("data:image/png;base64,__INKRAIL_GRAIN__");
+  --wax-x:0%;--wax-y:0%;--seal-letter-size:.124;--seal-width:.53;
+  --paper:#eeecd9;--ink:#292b27;--font:Courier,"Courier New",monospace;--size:20px;
+  --margin:clamp(27px,10%,78px);--grain-alpha:.12;--mark-alpha:.5;--ink-alpha:.95;
+}
+*{box-sizing:border-box}
+html{min-height:100%;background:#1b302a;color:var(--ink);font-family:Georgia,serif}
+body{min-height:100vh;margin:0;isolation:isolate}
+body::before,body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none}
+body::before{background:radial-gradient(ellipse at 34% 25%,#5c6753 0%,#384d40 26%,#233b32 54%,#142a24 85%,#10211e 100%)}
+body::after{background-image:var(--grain);background-size:265px;opacity:.095;mix-blend-mode:soft-light}
+button{font:inherit;color:inherit}
+button:focus-visible{outline:2px solid #eddaa8;outline-offset:6px}
+html[data-phase] #seal-caption{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#cover{display:none;position:fixed;inset:0;z-index:2;overflow:auto}
+html[data-phase="closed"] #cover,html[data-phase="opening"] #cover{display:grid;place-items:center}
+html[data-phase="closed"] #reading-view{display:none}
+html[data-phase="opening"] #cover{pointer-events:none}
+#open-letter{width:min(620px,calc(100% - 44px),max(380px,90vh));display:block;position:relative;padding:0;margin:90px auto 74px;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent;perspective:1300px}
+#open-letter:focus-visible{outline:0}
+#open-letter:focus-visible .action-label{outline:2px solid #f3dfad;outline-offset:9px;border-radius:2px}
+#envelope{position:relative;display:block;width:100%;aspect-ratio:1.7;transform:rotate(-3deg);border-radius:5px;background:#bfb295;box-shadow:0 2px 2px #0a1b17aa,5px 10px 12px -4px #0b1b1690,14px 29px 36px -13px #071610ba,28px 53px 65px -24px #061710b0;transition:transform .45s,box-shadow .45s}
+.envelope-layer,.flap-face,.seal-half,.wax-face{position:absolute;inset:0;display:block;width:100%;height:100%;pointer-events:none}
+.shell{border-radius:inherit;overflow:hidden;background:linear-gradient(145deg,#dfd2ae,#b8a677 70%,#d6c8a4)}
+.liner{position:absolute;inset:1.5% 1% 0;background:repeating-linear-gradient(135deg,#585e48 0 2px,#777a5d 2px 4px,#687057 4px 9px,#b6ac81 9px 10px,#677055 10px 15px);clip-path:polygon(0 0,100% 0,52% 72%,48% 72%)}
+.insert{position:absolute;left:4%;right:4%;top:4%;bottom:8%;border-radius:2px;background:linear-gradient(120deg,#fcf6df,#ded4b5);border:1px solid #eee6ca;transform:translateY(7%)}
+.pocket{border-radius:inherit;overflow:hidden;filter:drop-shadow(0 -1px 1px #66543944)}
+.flap{transform-origin:50% 0;transform-style:preserve-3d;filter:drop-shadow(1px 4px 2px #6c543c4a)}
+.flap svg{overflow:visible}
+.flap-cut,.paper-edge{position:absolute;inset:0;background-image:var(--grain);background-size:280px;mix-blend-mode:multiply;opacity:.18;pointer-events:none}
+.flap-cut{clip-path:polygon(0 0,100% 0,53% 58%,50% 60%,47% 58%)}
+.paper-edge{border-radius:inherit;clip-path:polygon(0 0,50% 60%,100% 0,100% 100%,0 100%)}
+.salutation{position:absolute;right:8%;bottom:11%;font:italic clamp(20px,4.8vw,37px)/1 "Snell Roundhand","Segoe Script","Apple Chancery",Georgia,serif;transform:rotate(-5deg);color:#68634c;opacity:.85}
+.seal-mount{--seal-size:clamp(86px,22vw,150px);position:absolute;width:var(--seal-size);aspect-ratio:1.25;left:50%;top:55%;transform:translate(-50%,-50%) rotate(3deg);filter:drop-shadow(1px 3px 2px #48342455)}
+.wax-face{background-image:var(--wax-atlas);background-size:400% 300%;background-position:var(--wax-x) var(--wax-y);background-repeat:no-repeat}
+.seal-half:last-child{visibility:hidden}
+.seal-half>img{display:block;width:100%;height:100%}
+html[data-phase="opening"] .seal-half:first-child{clip-path:polygon(0 0,52% 0,47% 28%,52% 39%,48% 51%,55% 64%,49% 81%,54% 100%,0 100%)}
+html[data-phase="opening"] .seal-half:last-child{visibility:visible;clip-path:polygon(52% 0,100% 0,100% 100%,54% 100%,49% 81%,55% 64%,48% 51%,52% 39%,47% 28%)}
+.imprint{position:absolute;left:50%;top:50%;width:calc(var(--seal-size) * var(--seal-width));height:45%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;text-align:center;overflow-wrap:anywhere;white-space:pre-line;font:bold calc(var(--seal-size) * var(--seal-letter-size))/1.05 Georgia,"Times New Roman",serif;color:#fae7bf;text-shadow:-.6px -.9px 1px #270e0be0,.45px .8px .5px #ffffff42}
+.wax-face::before,.wax-face::after{content:"";position:absolute;width:2.4%;aspect-ratio:1;left:49%;top:24%;background:#ecd3a2;opacity:.75;transform:rotate(45deg);box-shadow:0 -1px 0 #451d1933}
+.wax-face::after{top:auto;bottom:24%}
+.action-label{display:inline-flex;align-items:center;justify-content:center;gap:.8em;position:relative;margin-top:clamp(40px,8vh,72px);font:italic clamp(21px,4.2vw,28px)/1.2 Georgia,serif;color:#f5efdf;text-shadow:0 1px 4px #091b17}
+.action-label::before,.action-label::after{content:"";display:block;height:1px;width:30px;background:linear-gradient(90deg,transparent,#c1af82)}
+.action-label::after{transform:scaleX(-1)}
+#sound-toggle{position:absolute;top:18px;right:max(16px,env(safe-area-inset-right));min-height:44px;min-width:44px;border:0;background:transparent;color:#ece6d6;display:inline-flex;align-items:center;gap:8px;padding:9px;cursor:pointer;font:12px/1.3 system-ui,sans-serif}
+#sound-toggle svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+#sound-toggle [data-muted],#sound-toggle[aria-pressed="false"] [data-on]{display:none}
+#sound-toggle[aria-pressed="false"] [data-muted]{display:block}
+@media(hover:hover){#open-letter:hover #envelope{transform:translateY(-3px) rotate(-2deg)}#sound-toggle:hover,.action-label:hover{color:#fff}}
+html[data-phase="opening"] #envelope{animation:leave-desk 1.18s ease-in-out both}
+html[data-phase="opening"] .flap{animation:lift .61s .15s ease-in-out both}
+html[data-phase="opening"] .insert{animation:slide-out .65s var(--unfold-delay) ease-in-out both}
+html[data-phase="opening"] .seal-half:first-child{animation:break-left .55s ease-in both}
+html[data-phase="opening"] .seal-half:last-child{animation:break-right .55s ease-in both}
+html[data-phase="opening"] .action-label,html[data-phase="opening"] #sound-toggle{opacity:0;transition:opacity .15s}
+@keyframes lift{0%{transform:perspective(850px) rotateX(0)}100%{transform:perspective(850px) rotateX(170deg);filter:brightness(.83)}}
+@keyframes slide-out{to{transform:translateY(-65%)}}
+@keyframes break-left{20%{transform:translate(-2%,.4%) rotate(-4deg)}75%,100%{transform:translate(-9%,9%) rotate(-11deg);opacity:0}}
+@keyframes break-right{20%{transform:translate(2.3%,-.8%) rotate(4deg)}75%,100%{transform:translate(8%,5%) rotate(10deg);opacity:0}}
+@keyframes leave-desk{0%,65%{transform:rotate(-3deg)}100%{transform:translateY(21%) scale(.9) rotate(-2deg);opacity:0}}
+#reading-view{padding:clamp(22px,6vw,76px) 14px 30px;max-width:810px;margin:auto}
+html[data-phase="opening"] #reading-view{animation:arrive 1.2s both}
+@keyframes arrive{0%,58%{opacity:0;transform:perspective(1100px) translateY(42px) rotateX(-18deg) scale(.94)}78%{opacity:1}100%{opacity:1;transform:none}}
+html[data-phase="opening"] #letter::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent 21%,#51402224 32.9%,#fff6dcb8 33.3%,transparent 39%,transparent 60%,#51402226 66.5%,#fff6dcab 66.8%,transparent 73%);animation:flatten 1.15s both}
+@keyframes flatten{0%,73%{opacity:1}100%{opacity:0}}
+#letter{position:relative;isolation:isolate;min-height:min(800px,80vh);padding:clamp(52px,11vw,110px) var(--margin);background-color:var(--paper);color:var(--ink);box-shadow:1px 2px 0 #8b8067,2px 3px 0 #d9cfb2,3px 6px 10px #0c191750,10px 19px 48px #0a1b1785;outline:0}
+#letter::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;background-image:var(--grain);background-size:370px;mix-blend-mode:multiply;opacity:var(--grain-alpha)}
+html[data-texture="smooth"] #letter::before{opacity:calc(var(--grain-alpha) * .24)}
+html[data-texture="cotton"] #letter::before{background-size:480px;opacity:calc(var(--grain-alpha) * 1.2)}
+html[data-texture="laid"] #letter::before{background-image:repeating-linear-gradient(0deg,#847352 0 1px,transparent 1px 4px),var(--grain);background-size:auto,370px}
+#letter-body{position:relative;font-family:var(--font);font-size:clamp(14px,var(--size),40px);line-height:1.58;tab-size:4;overflow-wrap:anywhere;opacity:var(--ink-alpha)}
+#letter-body p,#letter-body pre,#letter-body blockquote,#letter-body h1,#letter-body h2,#letter-body h3,#letter-body h4,#letter-body h5,#letter-body h6{margin:0;white-space:pre-wrap}
+#letter-body h1,#letter-body h2,#letter-body h3,#letter-body h4,#letter-body h5,#letter-body h6{line-height:1.3;padding:.15em 0}
+#letter-body h1{font-size:1.6em}#letter-body h2{font-size:1.4em}#letter-body h3{font-size:1.24em}#letter-body h4{font-size:1.14em}#letter-body h5,#letter-body h6{font-size:1.05em}
+#letter-body blockquote{padding-left:.7em;border-left:2px solid #8c83698a}
+#letter-body :is(pre,code,.literal-line){font-family:ui-monospace,monospace;white-space:pre-wrap}
+#letter-body .list-line{padding-left:1.6em;text-indent:-1.6em}
+#letter-body p:empty::before{content:"\00a0"}
+.margin{position:absolute;top:24px;bottom:24px;width:clamp(10px,3%,24px);pointer-events:none;opacity:.44;background-image:var(--margin-pattern);background-size:100% auto;background-repeat:repeat-y;color:#76673f}
+.margin.left{left:2%}.margin.right{right:2%;transform:scaleX(-1)}
+.emboss{position:absolute;top:18px;right:6.4%;width:50px;height:40px;display:grid;place-items:center;line-height:1;font:italic bold 27px Georgia,serif;letter-spacing:-.16em;color:#746a51;text-shadow:-1px -1px 0 #564a34,1px 1px 1px #fff;font-variant:small-caps;opacity:var(--mark-alpha);pointer-events:none}
+.emboss:empty{display:none}
+#signature-seal{display:none;--seal-size:98px;width:var(--seal-size);aspect-ratio:1.25;position:relative;margin-top:1.35em;break-inside:avoid}
+html[data-phase] #signature-seal{display:block}
+.credit{text-align:center;color:#e3ddc9;font:12px/1.5 system-ui,sans-serif;margin:25px 0 0}
+.credit a{color:inherit;text-decoration-color:#a99e7b;text-underline-offset:3px}
+#seal-caption{margin:1.5em 0 0;font:italic 1em Georgia,serif}
+@media(max-width:480px){#open-letter{width:calc(100% - 36px)}#letter{padding:60px max(24px,6.5%) 56px}#letter-body{font-size:clamp(14px,var(--size),25px)}.emboss{top:12px;right:9%}.margin{width:9px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-delay:0s!important;transition-duration:0s!important}}
+@media print{
+ @page{margin:16mm}
+ html,body,#reading-view{background:white!important;margin:0!important;padding:0!important;max-width:none}
+ #cover,.credit,body::before,body::after{display:none!important}
+ html[data-phase] #reading-view{display:block!important;animation:none!important}
+ #letter{box-shadow:none;margin:0;padding:7mm 5mm;min-height:0;background:white}
+ #letter-body{font-size:12pt;opacity:1}#letter-body :is(h1,h2,h3,h4,h5,h6){break-after:avoid}
+ .margin,.emboss,#letter::before{display:none}.wax-face{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<main>
+<div id="cover">
+<button type="button" id="open-letter" aria-label="Open letter" aria-describedby="seal-caption" aria-controls="letter">
+<span id="envelope" aria-hidden="true">
+<span class="envelope-layer shell"><span class="liner"></span></span>
+<span class="insert"></span>
+<svg class="envelope-layer pocket" viewBox="0 0 680 400" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+<defs>
+<linearGradient id="left-fold" x1="0" x2="1" y1="0" y2=".9" gradientUnits="objectBoundingBox"><stop stop-color="#e9dfc4"/><stop offset="1" stop-color="#baab88"/></linearGradient>
+<linearGradient id="right-fold" x1="0" x2="1" y1=".9" y2="0" gradientUnits="objectBoundingBox"><stop stop-color="#ccbd9a"/><stop offset="1" stop-color="#e5d8b7"/></linearGradient>
+<linearGradient id="bottom-fold" x1="0" x2=".95" y1="0" y2="1"><stop stop-color="#eee3c7"/><stop offset=".6" stop-color="#dcd0ae"/><stop offset="1" stop-color="#c8b997"/></linearGradient>
+</defs>
+<path d="M0 0 340 218 0 400Z" fill="url(#left-fold)"/><path d="M680 0 340 218 680 400Z" fill="url(#right-fold)"/>
+<path d="M0 400 316 192q24-17 48 0l316 208Z" fill="url(#bottom-fold)" stroke="#a89674" stroke-width="1.6"/>
+<path d="m2 397 315-203q23-17 46 0l315 204" fill="none" stroke="#f3e9d2" stroke-width="1.15"/>
+</svg>
+<span class="envelope-layer paper-edge"></span>
+<span class="salutation">For you</span>
+<span class="envelope-layer flap">
+<svg class="flap-face" viewBox="0 0 680 400" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+<defs><linearGradient id="top-fold" x1=".12" x2=".9" y1="0" y2=".94"><stop stop-color="#f3ebd4"/><stop offset=".53" stop-color="#e6dbbc"/><stop offset="1" stop-color="#d6c6a3"/></linearGradient></defs>
+<path d="M0 4Q0 0 4 0h672q4 0 4 4L359 226q-19 15-38 0Z" fill="url(#top-fold)"/>
+<path d="M3 3 322 223q18 14 36 0L677 3" fill="none" stroke="#f8efdc" stroke-width="1.8" opacity=".8"/>
+<path d="M11 4 325 219q15 11 30 0L669 4" fill="none" stroke="#c8b99c" stroke-width=".8" opacity=".75"/>
+</svg><span class="flap-cut"></span>
+</span>
+<span class="seal-mount"><span class="seal-half"></span><span class="seal-half"></span></span>
+</span>
+<span class="action-label" aria-hidden="true">Open letter</span>
+</button>
+<button id="sound-toggle" type="button" aria-label="Opening sound" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h4l5-4v14l-5-4H3z"/><g data-on><path d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></g><path data-muted d="m16 9 5 6m0-6-5 6"/></svg><span>Sound on</span></button>
+</div>
+<div id="reading-view">
+<article id="letter" aria-label="Letter" tabindex="-1">
+<span class="margin left" aria-hidden="true"></span><span class="margin right" aria-hidden="true"></span><span class="emboss" aria-hidden="true"></span>
+<div id="letter-body">__INKRAIL_BODY__</div>
+<div id="signature-seal" aria-hidden="true"></div>
+<p id="seal-caption">Wax seal · <span dir="auto">__INKRAIL_INSCRIPTION__</span></p>
+</article>
+<p class="credit"><a href="https://aaryanverma.github.io/inkrail/" target="_blank" rel="noopener noreferrer">Made with Inkrail</a></p>
+</div>
+</main>
+<script type="application/json" id="stationery">__INKRAIL_PAYLOAD__</script>
+<script type="application/octet-stream" id="paper-rustle">__INKRAIL_RUSTLE__</script>
+<script>
+(() => {
+  'use strict';
+  const prefs = JSON.parse(document.getElementById('stationery').textContent);
+  const root = document.documentElement;
+  const style = root.style;
+  const seal = prefs.seal || {};
+  const inscription = typeof seal.text === 'string' && seal.text.trim() ? seal.text : 'Sealed';
+  const soundButton = document.getElementById('sound-toggle');
+  const openButton = document.getElementById('open-letter');
+  const letter = document.getElementById('letter');
+  const choose = (choices, key, fallback) => Object.prototype.hasOwnProperty.call(choices, key) ? choices[key] : fallback;
+  const clamp = (value, low, high, fallback) => typeof value === 'number' && Number.isFinite(value) ? Math.min(high, Math.max(low, value)) : fallback;
+  style.setProperty('--paper', choose({ivory:'#eeecd9',cream:'#e5d7b7',white:'#f3f1e9'}, prefs.paper, '#eeecd9'));
+  style.setProperty('--ink', choose({carbon:'#292b27',midnight:'#213d57',oxblood:'#591f24'}, prefs.ribbon, '#292b27'));
+  const fonts = {
+    courier:'Courier,"Courier New",monospace', courierNew:'"Courier New",Courier,monospace',
+    americanTypewriter:'"American Typewriter",Cambria,Georgia,serif', typewriterLight:'"American Typewriter Light","American Typewriter",Georgia,serif',
+    typewriterCondensed:'"American Typewriter Condensed","American Typewriter",Georgia,serif',
+    menlo:'Menlo,Consolas,monospace', monaco:'Monaco,Menlo,Consolas,monospace', georgia:'Georgia,serif'
+  };
+  style.setProperty('--font', choose(fonts, prefs.writingFont, fonts.courier));
+  style.setProperty('--size', clamp(prefs.fontSize, 12, 40, 20) + 'px');
+  if (prefs.wideMargins === false) style.setProperty('--margin', 'clamp(22px,6%,50px)');
+  style.setProperty('--ink-alpha', .72 + .28 * clamp(prefs.inkStrength,0,1,.88));
+  style.setProperty('--grain-alpha', .23 * clamp(prefs.textureStrength,0,1,.7));
+  style.setProperty('--mark-alpha', .52 * clamp(prefs.embossingDepth,0,1,.7));
+  root.dataset.texture = choose({classic:'classic',cotton:'cotton',laid:'laid',smooth:'smooth'}, prefs.paperTexture, 'classic');
+  document.querySelector('.emboss').textContent = choose({none:'',monogram:'I',makerMark:'IR',botanical:'❧',sunburst:'✺'}, prefs.paperEmbossing, 'IR');
+  const motifs = {
+    botanical:'<path d="M7 48q16-24 1-48m5 26q11-3 9-13-9 3-9 13ZM11 15Q1 13 2 5q9 2 9 10Zm0 25Q1 38 2 28q10 3 9 12Z"/>',
+    ledger:'<path d="M9 0v48m4-48v48M5 12h11M5 36h11"/>',
+    artDeco:'<path d="M11 0 19 12 11 24 3 12Zm0 24 8 12-8 12-8-12Zm0-19 4 7-4 7-4-7Z"/>',
+    celestial:'<path d="m6 4 10 13-8 13 8 14" stroke-dasharray="2 2"/><path d="m6 1 1 2 2 1-2 1-1 3-1-3-2-1 2-1Zm10 13 1 2 3 1-3 1-1 3-1-3-2-1 2-1Z"/><circle cx="8" cy="30" r="1.4"/>'
+  };
+  const motif = choose(motifs, prefs.marginStyle, '');
+  if (motif) {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="48" viewBox="0 0 24 48" fill="none" stroke="#716b4a" stroke-width="1.1">' + motif + '</svg>';
+    style.setProperty('--margin-pattern', 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")');
+  }
+  style.setProperty('--wax-x', choose({oxblood:'0%',forest:'33.333333%',navy:'66.666667%',plum:'100%'}, seal.color, '0%'));
+  style.setProperty('--wax-y', choose({round:'0%',oval:'50%',scalloped:'100%'}, seal.shape, '0%'));
+  const glyphs = Array.from(inscription);
+  style.setProperty('--seal-width', seal.shape === 'oval' ? '.62' : '.53');
+  style.setProperty('--seal-letter-size', glyphs.length <= 3 ? '.19' : glyphs.length < 9 ? '.125' : glyphs.length < 15 ? '.107' : '.086');
+  for (const host of document.querySelectorAll('.seal-half, #signature-seal')) {
+    const face = document.createElement('span');
+    face.className = 'wax-face';
+    const imprint = document.createElement('span');
+    imprint.className = 'imprint';
+    imprint.textContent = inscription;
+    face.appendChild(imprint);
+    host.appendChild(face);
+  }
+  let soundOn = true, openingMix;
+  function setSound(enabled) {
+    soundOn = enabled;
+    if (openingMix) openingMix.gain.value = soundOn ? 1 : 0;
+    soundButton.setAttribute('aria-pressed', String(soundOn));
+    soundButton.querySelector('span').textContent = soundOn ? 'Sound on' : 'Sound off';
+  }
+  soundButton.addEventListener('click', () => setSound(!soundOn));
+  async function playOpeningSounds(primedAudio) {
+    const Audio = window.AudioContext || window.webkitAudioContext;
+    if (!primedAudio && !Audio) return;
+    const openedAt = performance.now();
+    const unfoldDelay = parseFloat(getComputedStyle(root).getPropertyValue('--unfold-delay')) / 1000;
+    let audio;
+    try {
+      audio = primedAudio || new Audio();
+      if (audio.state !== 'running') await audio.resume();
+      const elapsed = (performance.now() - openedAt) / 1000;
+      if (elapsed >= unfoldDelay || document.hidden) return;
+      const unfoldAt = audio.currentTime + unfoldDelay - elapsed;
+      openingMix = audio.createGain();
+      openingMix.gain.value = soundOn ? 1 : 0;
+      openingMix.connect(audio.destination);
+      function play(buffer, when) {
+        // A slow decoder should join the gesture in progress, or skip it once finished.
+        const offset = Math.max(0, audio.currentTime - when);
+        if (offset >= buffer.duration || document.hidden) return;
+        const source = audio.createBufferSource();
+        source.buffer = buffer;
+        source.connect(openingMix);
+        return new Promise(resolve => {
+          source.onended = resolve;
+          source.start(Math.max(when, audio.currentTime), offset);
+        });
+      }
+      const buffer = audio.createBuffer(1, Math.ceil(audio.sampleRate * .16), audio.sampleRate);
+      const samples = buffer.getChannelData(0);
+      let previous = 0;
+      for (let i = 0; i < samples.length; i++) {
+        const time = i / audio.sampleRate;
+        const noise = Math.random() * 2 - 1;
+        previous += (noise - previous) * .44;
+        const attack = Math.min(1,time * 1800);
+        const echo = time < .027 ? 0 : .4 * Math.exp(-(time - .027) * 115);
+        samples[i] = .22 * previous * attack * (Math.exp(-time * 106) + echo);
+      }
+      const snap = play(buffer, audio.currentTime);
+      const recorded = document.getElementById('paper-rustle').textContent.trim();
+      const bytes = Uint8Array.from(atob(recorded), character => character.charCodeAt(0));
+      const rustle = audio.decodeAudioData(bytes.buffer)
+        .then(paper => play(paper, unfoldAt)).catch(() => {});
+      await Promise.all([snap, rustle]);
+    } catch {
+      // Reading and the envelope animation also work when a browser blocks audio.
+    } finally {
+      openingMix = null;
+      if (audio && audio.state !== 'closed') audio.close().catch(() => {});
+    }
+  }
+  function reveal() {
+    root.dataset.phase = 'open';
+    letter.focus({preventScroll:true});
+  }
+  function openLetter(primedAudio) {
+    if (root.dataset.phase !== 'closed') return;
+    root.dataset.phase = 'opening';
+    if (soundOn) playOpeningSounds(primedAudio);
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) reveal();
+    else window.setTimeout(reveal,1180);
+  }
+  openButton.addEventListener('click', () => openLetter());
+  // The protected cover already received the opening gesture and unlocked audio on submit.
+  openButton.addEventListener('inkrail:unlocked', ({detail}) => {
+    const wax = new Image();
+    wax.alt = '';
+    wax.src = detail.sealImage;
+    for (const half of openButton.querySelectorAll('.seal-half')) half.replaceChildren(wax.cloneNode());
+    setSound(detail.soundOn);
+    openLetter(detail.audioContext);
+  }, {once:true});
+  // The initial document is an ordinary readable letter in script-blocking previews.
+  root.dataset.phase = 'closed';
+})();
+</script>
+</body></html>

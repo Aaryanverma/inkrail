@@ -143,6 +143,7 @@ internal sealed class WriterWindow : Form
                 case "boot": value = library.Boot(); break;
                 case "import": value = FileDialogs.Import(this); break;
                 case "export": value = FileDialogs.Export(this, request.Args); break;
+                case "exportInteractive": value = FileDialogs.ExportInteractive(this, request.Args); break;
                 case "beginPdfExport":
                     bool granted = !closePending && !canClose && !pdfExportActive;
                     if (granted) pdfExportActive = true;
