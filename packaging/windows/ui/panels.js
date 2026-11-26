@@ -155,17 +155,22 @@ export function mountPanels(root, callbacks = {}) {
   }
   function stopAudio() { callbacks.onStopSoundPreview?.(); }
   function close() {
-    if (!dialog.open) return false;
+    if (!dialog.open || (kind==='seal' && busy)) return false;
     if (sub.open) { if (!busy) sub.close(); return true; }
     const previous=kind;
     if (kind==='settings') {stopAudio(); cleanupPreviews();}
     kind=null; revision++; busy=false; dialog.close();
+    if (previous==='seal') {
+      dialog.querySelector('form').reset();
+      dialog.replaceChildren();
+      errorBox=null;
+    }
     activeBefore?.focus?.({preventScroll:true});
     activeBefore=null;
     callbacks.onClose?.(previous);
     return true;
   }
-  function open(type, page) {
+  function open(type, page, forExport = false) {
     if (!dialog.open) activeBefore=document.activeElement;
     if (sub.open) sub.close();
     if (kind==='settings' && type!=='settings') {stopAudio(); cleanupPreviews();}
@@ -173,7 +178,7 @@ export function mountPanels(root, callbacks = {}) {
     dialog.classList.toggle('ip-library',type==='library');
     dialog.classList.toggle('ip-seal-dialog',type==='seal');
     if (type==='settings') buildSettings();
-    else if (type==='seal') buildSeal(page);
+    else if (type==='seal') buildSeal(page, forExport);
     else { showDeleted=false; query=''; buildLibrary(); }
     if (!dialog.open) dialog.showModal();
     if (type==='settings') previews.forEach(hydratePreview);
@@ -457,23 +462,27 @@ export function mountPanels(root, callbacks = {}) {
     dialog.insertBefore(errorBox,body);
     activateTab(tab);
   }
-  function buildSeal(page) {
+  function buildSeal(page, forExport) {
     const existing=normalizeSeal(page.seal);
     const draft={...(existing || defaultSeal)};
     const form=el('form','ip-seal-form');
-    const heading=el('h2','','Letter seal');
+    const heading=el('h2','',forExport?'Export interactive letter':'Letter seal');
     heading.id=headingId;
     const preview=el('div','ip-seal-preview');
     const field=el('input','ip-title-input');
     field.type='text';field.value=draft.text;field.autocomplete='off';
     const textLabel=el('label','ip-seal-field');
     textLabel.append(append(el('span','ip-seal-label'),el('span','','Seal text'),el('small','', 'Up to '+sealTextLimit+' characters')),field);
-    const apply=el('button','ip-emphasis',existing?'Save changes':'Apply seal');
+    const apply=el('button','ip-emphasis',forExport?'Continue to export…':existing?'Save changes':'Apply seal');
     apply.type='submit';
+    const protection=forExport ? passwordOptions(updateApply) : null;
+    function updateApply() {
+      apply.disabled=busy || !normalizeSeal(draft) || (protection && !protection.valid());
+    }
     function previewDraft() {
       const value=normalizeSeal(draft);
       preview.replaceChildren(drawSeal(value || {...draft,text:''}));
-      apply.disabled=!value;
+      updateApply();
     }
     function updateText(event) {
       if (event.isComposing) return;
@@ -493,20 +502,68 @@ export function mountPanels(root, callbacks = {}) {
     }
     const choices=append(el('div','ip-seal-choices'),choiceField('shape','Shape',sealShapes),choiceField('color','Wax color',sealColors));
     const actions=el('footer','ip-confirm-actions');
-    if (existing) actions.append(button('Remove seal',async e=>{
+    if (existing && !forExport) actions.append(button('Remove seal',async e=>{
       if (await run('setSeal',page.id,null,e.currentTarget,true)) close();
     },'ip-plain ip-remove-seal'));
     actions.append(button('Cancel',close),apply);
     form.addEventListener('submit',async e=>{
       e.preventDefault();
-      const value=normalizeSeal(draft);
-      if (value && await run('setSeal',page.id,value,apply,true)) close();
+      const seal=normalizeSeal(draft);
+      if (busy || !seal || (protection && !protection.valid())) return;
+      const value=protection ? {seal,password:protection.password()} : seal;
+      form.inert=true;
+      const saved=await run(forExport?'exportInteractive':'setSeal',page.id,value,apply,!forExport);
+      form.inert=false;
+      if (saved) close();
+      else { updateApply(); apply.focus(); }
     });
     form.append(heading,preview,textLabel,choices);
+    if (protection) form.append(protection.section);
     addError(form);
     form.append(actions);
     dialog.replaceChildren(form);
     previewDraft();
+  }
+  function passwordOptions(onChange) {
+    const section=el('div','ip-export-protection');
+    const toggle=el('input');
+    toggle.type='checkbox';
+    toggle.name='protectLetter';
+    const fields=el('div','ip-password-fields');
+    const hint=note('Share the password separately. Inkrail can’t recover it.');
+    const mismatch=note('The passwords don’t match.');
+    mismatch.setAttribute('aria-live','polite');
+    function field(name,label) {
+      const input=el('input','ip-title-input');
+      input.type='password'; input.name=name; input.autocomplete='new-password';
+      input.spellcheck=false; input.autocapitalize='none';
+      fields.append(append(el('label','ip-seal-field'),el('span','',label),input));
+      return input;
+    }
+    const password=field('password','Password');
+    const confirmation=field('confirmPassword','Confirm password');
+    fields.append(hint,mismatch);
+    fields.hidden=mismatch.hidden=true;
+    section.append(append(el('label','ip-password-toggle'),toggle,el('span','','Require a password')),fields);
+
+    function validate() {
+      const differs=confirmation.value.length>0 && password.value!==confirmation.value;
+      mismatch.hidden=!differs;
+      confirmation.setAttribute('aria-invalid',String(differs));
+      onChange();
+    }
+    toggle.onchange=()=>{
+      fields.hidden=!toggle.checked;
+      if (toggle.checked) password.focus();
+      else { password.value=''; confirmation.value=''; }
+      validate();
+    };
+    password.oninput=confirmation.oninput=validate;
+    return {
+      section,
+      valid:()=>!toggle.checked || (password.value.length>0 && password.value===confirmation.value),
+      password:()=>toggle.checked ? password.value : null
+    };
   }
   function buildLibrary() {
     const header=makeHeader('Your letter box.','Everything you left on the page.','ip-plain',true);
@@ -697,7 +754,7 @@ export function mountPanels(root, callbacks = {}) {
       open('settings');
     },
     showLibrary() { open('library'); },
-    showSeal(page) { open('seal',page); },
+    showSeal(page, forExport = false) { open('seal',page,forExport); },
     close,
     isOpen() {return dialog.open;},
     update,

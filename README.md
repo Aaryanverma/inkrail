@@ -6,8 +6,6 @@
   <p><a href="https://github.com/Aaryanverma/inkrail/releases">Mac and Windows downloads</a> · <a href="https://apps.microsoft.com/detail/9nq2fds73hpz">Get it for Windows on the Microsoft Store</a></p>
 </div>
 
-**Inkrail v0.1.2** lets you press a maker’s mark into the paper, decorate its margins, and finish a letter with a personal wax seal. Export it as a PDF to keep the stationery, ink, and seal together.
-
 🎥 Watch the macOS demo ↓
 <p align="center">
   <a href="https://youtu.be/oanl6tyIvMo">
@@ -140,22 +138,18 @@ Markdown export keeps all three kinds of paragraph marker.
 
 ### Sealing and exporting
 
-Choose **Seal letter…** at the foot of a letter with writing on it.
-Enter up to 24 characters, choose a round, oval, or scalloped impression and
-pick a wax color. **Apply seal** places it below your last line. Choose
-**Edit seal…** to change or remove it. The seal stays in place as you revise.
-Clearing all the writing also removes the seal. Undo restores both.
+After writing, choose **Seal letter…** at the foot of the page. Enter an inscription
+(up to 24 characters), pick a shape and wax color, then choose **Apply seal**.
+Use **Edit seal…** to change or remove it.
 
-Choose **Export Letter as PDF…** from the export button on the paper, the **File** menu on
-Mac, or the **…** menu on Windows (**Alt+F**). Every sheet keeps the paper,
-typeface, ink, Markdown styling and line wrapping. The first sheet carries the
-embossing and decorative margins you chose. A wax seal appears once, after the
-last line. PDF pages are flat, square-cornered and lit by daylight.
+Use the export button on the paper to choose a format.
 
-Choose **Export Markdown…** to keep editing the formatting in a `.md` file, or
-**Export Text…** for plain text.
-To move a letter between Mac and Windows, export it as Markdown and import it on
-the other computer with **⌘O** on Mac or **Ctrl+O** on Windows.
+- **Export Letter as PDF…** preserves the stationery, formatting, and any wax seal for printing.
+- **Export Interactive Letter** creates a sealed envelope using your seal or one you choose for the export.
+  Send the HTML file. Your reader can save it, open it in a browser, and tap or click the seal to unfold the letter, even offline.
+  For privacy, select **Require a password** and share the passphrase separately. If you forget it, export the original again with a new passphrase.
+- **Export Markdown…** keeps the formatting and seal so you can import the letter on another Mac or Windows PC.
+- **Export Text…** saves a plain-text copy.
 
 ## Your letters
 

@@ -81,9 +81,10 @@ def check_mac(directory, resources, screenshots):
             bundle += "Contents/Resources/"
         for name, source in resources.items():
             check_contents(archive, bundle + name, source)
+        media_extensions = (".png", ".wav", ".mp3")
         artwork_and_audio = {name[len(bundle):] for name in archive.namelist()
-                             if name.startswith(bundle) and name.endswith((".png", ".wav"))}
-        if artwork_and_audio != {name for name in resources if name.endswith((".png", ".wav"))}:
+                             if name.startswith(bundle) and name.endswith(media_extensions)}
+        if artwork_and_audio != {name for name in resources if name.endswith(media_extensions)}:
             raise ValueError("Inkrail.zip: unexpected artwork or sound in the app bundle")
 
 

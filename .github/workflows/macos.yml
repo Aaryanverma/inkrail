@@ -26,6 +26,7 @@ jobs:
           bash scripts/check-customization.sh
           bash scripts/check-ink-rendering.sh
           bash scripts/check-letter-pdf.sh
+          bash scripts/check-interactive-letter.sh --reader
           bash scripts/check-machine-styles.sh
           bash scripts/check-desk-preferences.sh
           bash scripts/check-night-lamp.sh

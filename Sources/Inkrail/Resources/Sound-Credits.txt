@@ -41,3 +41,10 @@ https://freesound.org/people/secretmojo/sounds/224012/
 Inkrail trimmed the recordings, mixed them to mono, filtered background
 noise, adjusted levels and faded the cuts. The other 15 sounds are original
 designs for the individual machines.
+
+Interactive letter — paper unfolding
+“opening_note” by dalexgray, released under CC0 1.0 Universal. One sheet
+of paper unfolded close to a stereo microphone. Inkrail trimmed one
+gesture, rolled off low rumble, adjusted its level and faded the cut.
+https://freesound.org/people/dalexgray/sounds/711853/
+https://creativecommons.org/publicdomain/zero/1.0/

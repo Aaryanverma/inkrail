@@ -79,11 +79,16 @@ struct LetterSealSheet: View {
     @InkrailState private var text: String
     @InkrailState private var shape: SealShape
     @InkrailState private var color: SealColor
+    @InkrailState private var requirePassword = false
+    @InkrailState private var password = ""
+    @InkrailState private var confirmation = ""
     let existing: LetterSeal?
-    let apply: (LetterSeal?) -> Void
+    let forExport: Bool
+    let apply: (LetterSeal?, String?) -> Void
 
-    init(existing: LetterSeal?, apply: @escaping (LetterSeal?) -> Void) {
+    init(existing: LetterSeal?, forExport: Bool = false, apply: @escaping (LetterSeal?, String?) -> Void) {
         self.existing = existing
+        self.forExport = forExport
         self.apply = apply
         let draft = existing ?? LetterSeal()
         _text = InkrailState(initialValue: draft.text)
@@ -94,8 +99,9 @@ struct LetterSealSheet: View {
     var body: some View {
         let inscription = LetterSeal.singleLine(text)
         let valid = !inscription.isEmpty && inscription.count <= LetterSeal.maximumTextLength
+        let passwordsMatch = password.utf8.elementsEqual(confirmation.utf8)
         VStack(alignment: .leading, spacing: 20) {
-            Text(existing == nil ? "Seal letter" : "Edit seal")
+            Text(forExport ? "Export interactive letter" : (existing == nil ? "Seal letter" : "Edit seal"))
                 .font(.custom("Courier", size: 23))
             HStack(spacing: 22) {
                 ZStack {
@@ -148,20 +154,39 @@ struct LetterSealSheet: View {
                 }
                 .frame(width: 240)
             }
+            if forExport {
+                VStack(alignment: .leading, spacing: 8) {
+                    Toggle("Require a password", isOn: $requirePassword)
+                        .onChange(of: requirePassword) { enabled in
+                            if !enabled { password = ""; confirmation = "" }
+                        }
+                    if requirePassword {
+                        SecureField("Password", text: $password)
+                        SecureField("Confirm password", text: $confirmation)
+                        if !confirmation.isEmpty && !passwordsMatch {
+                            Text("The passwords don’t match.").foregroundColor(.red)
+                        }
+                        Text("Share the password separately. Inkrail can’t recover it.")
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .textFieldStyle(.roundedBorder)
+            }
             Divider()
             HStack {
-                if existing != nil {
-                    Button("Remove seal") { apply(nil); dismiss() }
+                if existing != nil && !forExport {
+                    Button("Remove seal") { apply(nil, nil); dismiss() }
                 }
                 Spacer()
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
-                Button(existing == nil ? "Apply seal" : "Save changes") {
-                    apply(LetterSeal(text: inscription, shape: shape, color: color))
+                Button(forExport ? "Continue to export…" : (existing == nil ? "Apply seal" : "Save changes")) {
+                    apply(LetterSeal(text: inscription, shape: shape, color: color),
+                          requirePassword ? password : nil)
                     dismiss()
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(DeskPrimaryButtonStyle())
-                .disabled(!valid)
+                .disabled(!valid || (requirePassword && (password.isEmpty || !passwordsMatch)))
             }
         }
         .font(.system(size: 12))
@@ -169,5 +194,9 @@ struct LetterSealSheet: View {
         .padding(24)
         .background(DeskPalette.paper)
         .preferredColorScheme(.light)
+        .onDisappear {
+            password = ""
+            confirmation = ""
+        }
     }
 }

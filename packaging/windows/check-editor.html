@@ -18,6 +18,54 @@ function expect(condition, message) {
     if (!condition) throw new Error(message);
 }
 try {
+    // Older portable archives are still supported by the Store repackaging workflow.
+    if (new URLSearchParams(location.search).has('interactive')) {
+        const {makeInteractiveLetter} = await import('./ui/interactive-letter.js');
+        const page = {privateTitle: 'personal filing label 728', ...importMarkdown('# Hello\n\nDear **Zoë**,')};
+        page.text += '\n\n<sample> & __INKRAIL_BODY__\n##  ';
+        const seal = {text: '</script' + '> & ✉️', shape: 'oval', color: 'navy'};
+        const html = await makeInteractiveLetter(page, normalizeSettings({paper: 'cream'}), seal);
+        const exported = new DOMParser().parseFromString(html, 'text/html');
+        const body = exported.getElementById('letter-body');
+        const settings = JSON.parse(exported.querySelector('script[type="application/json"]').textContent);
+        const audio = exported.querySelector('script#paper-rustle[type="application/octet-stream"]');
+        const recording = await fetch('./ui/assets/paper-unfold.mp3');
+        expect(audio && recording.ok, 'Interactive export is missing its paper recording.');
+        const embedded = atob(audio.textContent.trim());
+        const bytes = new Uint8Array(await recording.arrayBuffer());
+        expect(bytes.length > 0 && bytes.length === embedded.length && bytes.every((byte, i) => embedded.charCodeAt(i) === byte),
+            'Interactive export changed or truncated the packaged paper recording.');
+        expect(body.querySelector('h1')?.textContent === 'Hello' && body.querySelector('strong')?.textContent === 'Zoë',
+            'Interactive letter lost its heading or inline emphasis.');
+        expect(body.textContent.includes('<sample> & __INKRAIL_BODY__') && !body.querySelector('sample'),
+            'Interactive letter treated writing as markup or a template slot.');
+        expect(body.textContent.includes('##  '), 'Interactive letter dropped a literal heading marker.');
+        expect(settings.seal.text === seal.text && settings.seal.color === 'navy' && settings.paper === 'cream',
+            'Interactive letter lost seal or paper settings.');
+        expect(html.includes('&lt;/script&gt; &amp; ✉️'), 'Script-free preview lost its escaped seal inscription.');
+        expect(!html.includes(page.privateTitle) && html.includes('data:image/png;base64,') &&
+            !html.includes('__INKRAIL_GRAIN__') && !html.includes('__INKRAIL_WAX__'), 'Interactive export has incomplete artwork or private metadata.');
+        if (new URLSearchParams(location.search).has('protected')) {
+            const passphrase = '  Déjà-vu ✉️  ';
+            const locked = await makeInteractiveLetter(page, normalizeSettings({paper: 'cream'}), seal, passphrase);
+            expect(!locked.includes(page.privateTitle) && !locked.includes('Zoë') && !locked.includes(passphrase) &&
+                !locked.includes('data:image/png;base64,'), 'Protected export disclosed letter data.');
+            const wrapper = new DOMParser().parseFromString(locked, 'text/html');
+            const data = JSON.parse(wrapper.querySelector('script[type="application/json"]').textContent);
+            const bytes = value => Uint8Array.from(atob(value), ch => ch.charCodeAt(0));
+            expect(data.version === 1 && bytes(data.iv).length === 12 && bytes(data.salt).length === 16, 'Invalid encrypted letter header.');
+            const input = await crypto.subtle.importKey('raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+            const key = await crypto.subtle.deriveKey({name:'PBKDF2', hash:'SHA-256', salt:bytes(data.salt), iterations:600000},
+                input, {name:'AES-GCM', length:256}, false, ['decrypt']);
+            const cipher = bytes(data.ciphertext);
+            const algorithm = {name:'AES-GCM', iv:bytes(data.iv), tagLength:128};
+            const plain = await crypto.subtle.decrypt(algorithm, key, cipher);
+            expect(new TextDecoder().decode(plain) === html, 'Protected export changed the rendered letter.');
+            cipher[cipher.length - 1] ^= 1;
+            const authenticated = await crypto.subtle.decrypt(algorithm, key, cipher).then(() => true, () => false);
+            expect(!authenticated, 'A modified letter passed authentication.');
+        }
+    }
     const initial = {id: "test", text: "Selected writing", formatting: [{location: 0, length: 8, emphasis: 2}]};
     const edits = [];
     const surface = document.querySelector("#surface");
@@ -308,5 +356,7 @@ try {
     result.textContent = "PASS";
 } catch (error) {
     result.textContent = "FAIL " + error.stack;
+} finally {
+    console.info("INKRAIL_EDITOR_RESULT " + result.textContent.replace(/\s*\n\s*/g, " "));
 }
 </script>

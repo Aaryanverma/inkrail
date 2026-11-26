@@ -39,8 +39,10 @@ def package_files(host_dir):
             if path.is_file() and not path.name.startswith("."):
                 yield path.relative_to(HERE).as_posix(), path
     for path in sorted(RESOURCES.iterdir()):
-        if path.suffix in {".png", ".wav"}:
+        if path.suffix in {".png", ".wav", ".mp3"}:
             yield "ui/assets/" + path.name, path
+    for template in ("InteractiveLetter.html", "ProtectedInteractiveLetter.html"):
+        yield "ui/assets/" + template, RESOURCES / template
     yield "notices/Sound-Credits.txt", RESOURCES / "Sound-Credits.txt"
     yield "LICENSE.txt", ROOT / "LICENSE"
     for name in ("START-HERE.txt", "Check-Inkrail.ps1"):
