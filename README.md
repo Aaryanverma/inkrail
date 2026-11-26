@@ -2,8 +2,8 @@
   <img src="Sources/Inkrail/Resources/AppIcon.png" width="88" alt="Inkrail icon" />
   <h1>Inkrail</h1>
   <p><em>Paper, ink, and a little room to write.</em></p>
-  <p>A quiet, offline writing desk for Mac and Windows. No accounts or subscriptions.</p>
-  <p><a href="https://github.com/Aaryanverma/inkrail/releases">Mac and Windows downloads</a> · <a href="https://apps.microsoft.com/detail/9nq2fds73hpz">Get it for Windows on the Microsoft Store</a></p>
+  <p>A quiet, offline writing desk for Mac, Windows and Linux. No accounts or subscriptions.</p>
+  <p><a href="https://github.com/Aaryanverma/inkrail/releases">Mac, Windows and Linux downloads</a> · <a href="https://apps.microsoft.com/detail/9nq2fds73hpz">Get it for Windows on the Microsoft Store</a></p>
 </div>
 
 **Inkrail v0.1.2** lets you press a maker’s mark into the paper, decorate its margins, and finish a letter with a personal wax seal. Export it as a PDF to keep the stationery, ink, and seal together.
@@ -88,9 +88,66 @@ Get Inkrail from the [Microsoft Store](https://apps.microsoft.com/detail/9nq2fds
 Choose **Extract All** and open **Inkrail.exe** in the extracted folder. Keep the folder together if you move the app.
 If Inkrail asks for the Microsoft Edge WebView2 Evergreen Runtime, install it and reopen the app. [Get WebView2 from Microsoft](https://developer.microsoft.com/microsoft-edge/webview2/)
 
+### Linux
+
+Inkrail needs GTK 3, WebKitGTK 4.1 and their Python GObject bindings, plus
+GStreamer plugins for the typewriter sounds and `xdg-open` for **Show local files**.
+Install the runtime once for your distribution:
+
+| Distribution | Install command |
+| :--- | :--- |
+| Arch / Manjaro | `sudo pacman -S gtk3 webkit2gtk-4.1 python-gobject gstreamer gst-plugins-base gst-plugins-good xdg-utils` |
+| Debian / Ubuntu | `sudo apt install python3-gi gir1.2-gtk-3.0 gir1.2-webkit2-4.1 gstreamer1.0-plugins-base gstreamer1.0-plugins-good xdg-utils` |
+| Fedora | `sudo dnf install gtk3 webkit2gtk4.1 python3-gobject gstreamer1.0-plugins-base gstreamer1.0-plugins-good xdg-utils` |
+
+**Run from a source checkout.** No build system or sudo is needed to launch;
+the launcher assembles the shared web desk on first run.
+
+```bash
+git clone https://github.com/imeraj/inkrail-meraj.git
+cd inkrail-meraj
+bash packaging/linux/install.sh --check-deps   # optional: verify the runtime
+bash Launch-Linux.sh                           # builds once, then opens Inkrail
+```
+
+**Use a portable bundle.** Build one, then extract and run it on another machine
+with the same runtime packages:
+
+```bash
+python3 packaging/linux/build-linux.py --output dist/Inkrail-Linux.tar.gz
+tar -xzf dist/Inkrail-Linux.tar.gz -C dist
+"dist/Inkrail-Linux-$(uname -m)/inkrail"
+```
+
+To install it for your user only (launcher entry and icon included), run
+`bash install.sh --bundle dist/Inkrail-Linux-$(uname -m)` from the bundle, then
+open Inkrail from your app launcher or with `~/.local/bin/inkrail`. Add
+`--install-deps` to let the installer run the distribution command above with
+sudo first. Verify a downloaded bundle with
+`python3 build-linux.py --check --bundle <bundle-folder>`.
+
+**First run and setup.** Letters are stored in
+`$XDG_DATA_HOME/inkrail` (usually `~/.local/share/inkrail`): `preferences.json`,
+`Library/Letters`, `Library/Recently Deleted` and, when needed, `Library/Recovery`.
+Open **Make it yours** with `Ctrl+,` to choose paper, machine, sounds and storage;
+`Alt+F` opens the menu with **Export Letter as PDF…**, import and export.
+To bring over a Mac or Windows library, copy its `Letters`, `Recently Deleted`
+and optional `Recovery` folders into a new, empty folder and choose
+**Make it yours → Storage → Change Location…** in Inkrail. The letter format is
+identical on all three platforms; see [Storage & recovery](docs/STORAGE.md).
+
+**Troubleshooting.** If Inkrail says it needs GTK 3 / WebKitGTK 4.1 bindings,
+install the packages above. If it says the library is already open, switch to
+the existing window — one desk is allowed per library. Inkrail works on both
+Wayland and X11. For other flags and build details, see
+[START-HERE.md](packaging/linux/START-HERE.md) and
+[build the Linux bundle](docs/DEVELOPMENT.md#build-the-linux-bundle).
+
 ## Build from source
 
 For Windows x64 and ARM64, follow the [Windows build instructions](docs/DEVELOPMENT.md#build-the-windows-zips).
+
+For Linux, see [build the Linux bundle](docs/DEVELOPMENT.md#build-the-linux-bundle).
 
 To build the Mac app on macOS 13 or later with Apple's Swift 5.9+ developer tools, double-click **Launch.command** or run the following commands.
 
@@ -103,19 +160,19 @@ See [macOS setup & troubleshooting](docs/DEVELOPMENT.md#start-on-your-mac).
 
 ## At your desk
 
-| Action | Mac | Windows |
-| :--- | :--- | :--- |
-| New letter | ⌘N | Ctrl+N |
-| Bold / Italic / Underline | ⌘B / ⌘I / ⌘U | Ctrl+B / Ctrl+I / Ctrl+U |
-| Clear inline formatting | `⌘\` | `Ctrl+\` |
-| Letter box | ⇧⌘O | Ctrl+Shift+O |
-| Make it yours | ⌘, | Ctrl+, |
-| Focus Mode | ⇧⌘F | Ctrl+Shift+F |
-| Night writing | ⌥⌘L | Ctrl+Alt+L |
-| Sound on / off | ⇧⌘M | Ctrl+Shift+M |
-| Import text or Markdown | ⌘O | Ctrl+O |
-| Export text | ⇧⌘E | Ctrl+Shift+E |
-| Save now | ⌘S | Ctrl+S |
+| Action | Mac | Windows | Linux |
+| :--- | :--- | :--- | :--- |
+| New letter | ⌘N | Ctrl+N | Ctrl+N |
+| Bold / Italic / Underline | ⌘B / ⌘I / ⌘U | Ctrl+B / Ctrl+I / Ctrl+U | Ctrl+B / Ctrl+I / Ctrl+U |
+| Clear inline formatting | `⌘\` | `Ctrl+\` | `Ctrl+\` |
+| Letter box | ⇧⌘O | Ctrl+Shift+O | Ctrl+Shift+O |
+| Make it yours | ⌘, | Ctrl+, | Ctrl+, |
+| Focus Mode | ⇧⌘F | Ctrl+Shift+F | Ctrl+Shift+F |
+| Night writing | ⌥⌘L | Ctrl+Alt+L | Ctrl+Alt+L |
+| Sound on / off | ⇧⌘M | Ctrl+Shift+M | Ctrl+Shift+M |
+| Import text or Markdown | ⌘O | Ctrl+O | Ctrl+O |
+| Export text | ⇧⌘E | Ctrl+Shift+E | Ctrl+Shift+E |
+| Save now | ⌘S | Ctrl+S | Ctrl+S |
 
 Use the **B**, *I*, and underline buttons at the foot of the paper to format a
 selection or the words you type next. Each letter remembers its emphasis and
@@ -147,15 +204,15 @@ pick a wax color. **Apply seal** places it below your last line. Choose
 Clearing all the writing also removes the seal. Undo restores both.
 
 Choose **Export Letter as PDF…** from the export button on the paper, the **File** menu on
-Mac, or the **…** menu on Windows (**Alt+F**). Every sheet keeps the paper,
+Mac, or the **…** menu on Windows and Linux (**Alt+F**). Every sheet keeps the paper,
 typeface, ink, Markdown styling and line wrapping. The first sheet carries the
 embossing and decorative margins you chose. A wax seal appears once, after the
 last line. PDF pages are flat, square-cornered and lit by daylight.
 
 Choose **Export Markdown…** to keep editing the formatting in a `.md` file, or
 **Export Text…** for plain text.
-To move a letter between Mac and Windows, export it as Markdown and import it on
-the other computer with **⌘O** on Mac or **Ctrl+O** on Windows.
+To move a letter between Mac, Windows and Linux, export it as Markdown and import
+it on the other computer with **⌘O** on Mac or **Ctrl+O** on Windows and Linux.
 
 ## Your letters
 
@@ -177,6 +234,7 @@ Inkrail saves letters locally. You can open the current library from within the 
 | :--- | :--- | :--- |
 | macOS | `~/Library/Application Support/Inkrail/` | **Writing → Show Local Files** |
 | Windows | `%APPDATA%\Inkrail\Library` | **Make it yours → Storage → Show in File Explorer** |
+| Linux | `$XDG_DATA_HOME/inkrail/Library` (usually `~/.local/share/inkrail/Library`) | **Make it yours → Storage → Show local files** |
 
 - To **move your library**, open **Make it yours → Storage → Change Location…** and
   choose a new or empty folder. Inkrail copies the whole library there and keeps the old copy.
@@ -184,7 +242,7 @@ Inkrail saves letters locally. You can open the current library from within the 
   **Recently deleted → Restore** within **30 days**. After that window,
   Inkrail removes the deleted letter when it next checks.
 
-Keep a separate backup of your library. [Storage & recovery on Mac and Windows →](docs/STORAGE.md)
+Keep a separate backup of your library. [Storage & recovery on Mac, Windows and Linux →](docs/STORAGE.md)
 
 ## Inspiration
 

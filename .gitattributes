@@ -1,6 +1,8 @@
 # Ship identical bytes for assets shared by the Windows and macOS releases.
 Sources/Inkrail/Resources/*.txt text eol=lf
 packaging/windows/ui/** text=auto eol=lf
+packaging/linux/** text=auto eol=lf
+scripts/check-linux-host.py text eol=lf
 packaging/windows/notices/*.txt text eol=lf
 packaging/windows/START-HERE.txt text eol=lf
 packaging/windows/Check-Inkrail.ps1 text eol=lf

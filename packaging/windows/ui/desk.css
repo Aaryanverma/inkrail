@@ -118,20 +118,17 @@
 .ink-desk__lip { overflow: visible; transform: translateY(.7px); filter: blur(.5px); }
 .ink-desk__lip > path { fill: none; stroke: rgb(255 255 255/.46); stroke-width: 1; }
 .ink-desk__emboss { position: absolute; width: 96px; height: 96px; pointer-events: none; }
-/* Broad letterfaces retain the grain, with a shadow and a narrow catching edge. */
-.ink-desk__seal-face {
-  fill: rgb(100 90 68 / .32);
+.ink-desk__emboss > svg { display: block; width: 100%; height: 100%; }
+/* Broad letterfaces retain the grain, with a shadow and a narrow catching edge.
+   HTML masks render reliably in WebKitGTK; SVG masks became solid squares. */
+.ink-desk__seal-face,.ink-desk__seal-shadow,.ink-desk__seal-highlight {
+  position: absolute; inset: 0; display: block; width: 96px; height: 96px;
+  -webkit-mask: var(--maker-mark) center / 66px auto no-repeat;
   mask: var(--maker-mark) center / 66px auto no-repeat;
 }
-.ink-desk__seal-shadow,.ink-desk__seal-highlight {
-  mask-image: var(--maker-mark), var(--maker-mark);
-  mask-position: var(--edge-position), center;
-  mask-size: 66px auto;
-  mask-repeat: no-repeat;
-  mask-composite: subtract;
-}
-.ink-desk__seal-shadow { fill: rgb(75 68 52 / .9); --edge-position: calc(50% - .7px) calc(50% - .9px); }
-.ink-desk__seal-highlight { fill: rgb(255 252 237 / .95); --edge-position: calc(50% + .72px) calc(50% + 1px); }
+.ink-desk__seal-face { background: rgb(100 90 68 / .32); }
+.ink-desk__seal-shadow { background: rgb(75 68 52 / .45); transform: translate(-.7px,-.9px); opacity: .7; }
+.ink-desk__seal-highlight { background: rgb(255 252 237 / .5); transform: translate(.72px,1px); opacity: .65; }
 .ink-desk__edge-light { mix-blend-mode: screen; }
 .ink-desk__lamp-tint { mix-blend-mode: multiply; }
 .ink-desk__surface { position: absolute; left: 0; top: 0; width: 100%; height: var(--editor-height); }

@@ -340,17 +340,21 @@ function embossPath(style) {
 }
 function setEmboss(node, style) {
   if (style === 'makerMark') {
-    node.innerHTML = `<rect class="ink-desk__seal-shadow" width="96" height="96"/>
-      <rect class="ink-desk__seal-highlight" width="96" height="96"/>
-      <rect class="ink-desk__seal-face" width="96" height="96"/>`;
+    // HTML elements keep the mark masked correctly in WebKitGTK; CSS masks on
+    // SVG rects render as an unmasked square there. The other styles stay SVG.
+    node.innerHTML = '<i class="ink-desk__seal-shadow"></i>'
+      + '<i class="ink-desk__seal-highlight"></i>'
+      + '<i class="ink-desk__seal-face"></i>';
     return;
   }
   const path = embossPath(style);
-  node.innerHTML = [
-    ['translate(-.7 -.9)','#4b4434','.9','1.9'],
-    ['translate(.72 1)','#fffced','.95','1.2'],
-    ['','#645a44','.38','1.1']
-  ].map(([tr,stroke,opacity,width]) => `<path d="${path}" transform="${tr}" fill="none" stroke="${stroke}" stroke-opacity="${opacity}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"/>`).join('');
+  node.innerHTML = '<svg viewBox="0 0 96 96">'
+    + [
+      ['translate(-.7 -.9)','#4b4434','.9','1.9'],
+      ['translate(.72 1)','#fffced','.95','1.2'],
+      ['','#645a44','.38','1.1']
+    ].map(([tr,stroke,opacity,width]) => `<path d="${path}" transform="${tr}" fill="none" stroke="${stroke}" stroke-opacity="${opacity}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"/>`).join('')
+    + '</svg>';
 }
 function embossRim(style, makerImage) {
   const key='emboss-rim-'+style;
@@ -539,7 +543,7 @@ export function mountDesk(root, callbacks = {}) {
         <div class="ink-desk__substrate" aria-hidden="true">
           <canvas class="ink-desk__grain"></canvas><div class="ink-desk__curl"></div>
           <svg class="ink-desk__lip"><path></path></svg>
-          <svg class="ink-desk__emboss" viewBox="0 0 96 96"></svg>
+          <div class="ink-desk__emboss"></div>
           <canvas class="ink-desk__edge-light"></canvas><canvas class="ink-desk__lamp-tint"></canvas>
         </div>
         <svg class="ink-desk__margin-art" aria-hidden="true"></svg>
@@ -636,7 +640,9 @@ export function mountDesk(root, callbacks = {}) {
     if(lastEmboss!==prefs.paperEmbossing){lastEmboss=prefs.paperEmbossing;setEmboss(emboss,lastEmboss);}
     relief=Math.pow(clamp(number(prefs.embossingDepth,defaults.embossingDepth),0,1),.72);
     emboss.style.opacity=relief;
-    if (lastEmboss==='makerMark' && prefs.nightMode && !makerImage.src) makerImage.src=asset('maker-mark.png');
+    // The mark needs the real image in both themes: WebKitGTK's SVG mask can
+    // otherwise render the masked rectangle as a solid square in day mode.
+    if (lastEmboss==='makerMark' && !makerImage.src) makerImage.src=asset('maker-mark.png');
     lastPosition=undefined;
   }
   function paintLamps() {

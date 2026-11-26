@@ -2,7 +2,7 @@
 
 [Back to the user guide](../README.md)
 
-These instructions use the v0.1.2 source tree. The Mac app uses Swift. The Windows x64 and ARM64 builds share the same .NET host, WebView2 editor and fonts. All three builds package the artwork and typewriter recordings in `Sources/Inkrail/Resources`.
+These instructions use the v0.1.2 source tree. The Mac app uses Swift. The Windows x64 and ARM64 builds share the same .NET host, WebView2 editor and fonts. The Linux build uses a GTK/WebKitGTK host for the same web editor. All builds package the artwork and typewriter recordings in `Sources/Inkrail/Resources`.
 
 ## Start on your Mac
 
@@ -56,6 +56,44 @@ foreach ($arch in 'x64', 'arm64') {
 
 Both ZIPs contain `Inkrail.exe`, its .NET runtime and WebView2 loader, the complete editor and assets, license notices, `START-HERE.txt`, a SHA-256 file manifest and `Check-Inkrail.ps1`. Extract a ZIP on a matching PC with the Microsoft Edge WebView2 Evergreen Runtime installed. Run `.\Check-Inkrail.ps1` from the extracted folder to exercise the app with disposable new and legacy libraries.
 
+## Build the Linux bundle
+
+The Linux build reuses the web desk from `packaging/windows/ui` verbatim. A small
+GTK 3 / WebKitGTK 4.1 host serves it from a loopback-only HTTP port and supplies
+the native file dialogs, window lifecycle and PDF printing through the same RPC
+bridge the Windows QA mode uses. No .NET, Swift or Node toolchain is needed.
+
+Install the runtime on Arch with:
+
+```bash
+sudo pacman -S gtk3 webkit2gtk-4.1 python-gobject gstreamer gst-plugins-base gst-plugins-good xdg-utils
+```
+
+Debian/Ubuntu: `sudo apt install python3-gi gir1.2-gtk-3.0 gir1.2-webkit2-4.1 gstreamer1.0-plugins-base gstreamer1.0-plugins-good xdg-utils`
+
+Fedora: `sudo dnf install gtk3 webkit2gtk4.1 python3-gobject gstreamer1.0-plugins-base gstreamer1.0-plugins-good xdg-utils`
+
+From the source root, run:
+
+```bash
+bash Launch-Linux.sh
+# or build a portable folder and optional tarball:
+python3 packaging/linux/build-linux.py --output dist/Inkrail-Linux.tar.gz
+```
+
+The bundle lands in `dist/Inkrail-Linux-<machine>/`. It contains the launcher,
+host package, complete desk, fonts, artwork, sounds, a `.desktop` entry, app
+icon and a SHA-256 manifest. Verify it with
+`python3 packaging/linux/build-linux.py --check --bundle dist/Inkrail-Linux-<machine>/`.
+`bash packaging/linux/install.sh --bundle <bundle>` installs it under
+`~/.local/share/inkrail` with a `~/.local/bin/inkrail` link and a user desktop
+entry; add `--install-deps` to install missing system packages first.
+
+The Linux profile is `$XDG_DATA_HOME/inkrail` (normally `~/.local/share/inkrail`)
+and uses the exact same preferences and letter JSON files as the Mac and Windows
+apps. `python3 scripts/check-linux-host.py` exercises the RPC bridge, storage,
+trash, relocation and static desk without needing a display.
+
 ## Run the tests
 
 From the v0.1.2 source root on macOS, run `swift test` for the core models,
@@ -67,13 +105,14 @@ to check the library and upgrade paths.
 
 ## GitHub release files
 
-The **Build and release Inkrail** workflow builds and verifies three ZIPs for v0.1.2.
+The **Build and release Inkrail** workflow builds and verifies the desktop archives for v0.1.2.
 
 | Release asset | Target |
 | --- | --- |
 | `Inkrail.zip` | Intel and Apple silicon Macs running macOS 13 Ventura or later |
 | `Inkrail-Windows-x64.zip` | Windows on Intel or AMD x64 |
 | `Inkrail-Windows-arm64.zip` | Windows on ARM64 |
+| `Inkrail-Linux.tar.gz` | Linux x86_64 with GTK 3 and WebKitGTK 4.1 |
 
 Pull requests and branch pushes produce downloadable workflow artifacts. To publish, push a `v`-prefixed tag on the release commit, for example `git tag v0.2.0` followed by `git push origin v0.2.0`. Once the native checks and archive verification pass, the workflow attaches all three ZIPs directly to that tag’s GitHub Release. It creates the release if needed. Re-running the workflow for the same tag replaces its three ZIP assets.
 
